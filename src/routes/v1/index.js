@@ -7,7 +7,7 @@ const docsRoute = require('./docs.route');
 const paymentCardRoute = require('./paymentCard.route');
 const uploadFileRoute = require('./upload.route');
 const orderRoute = require('./order.route');
-const favouriteItemRoute = require('./favouriteItem.route');
+const shopRoute = require('./shop.route');
 const contactUsRoute = require('./contactUs.route');
 const config = require('../../config/config');
 
@@ -31,10 +31,6 @@ const defaultRoutes = [
     route: userRoute,
   },
   {
-    path: '/paymentCard',
-    route: paymentCardRoute,
-  },
-  {
     path: '/upload',
     route: uploadFileRoute,
   },
@@ -43,8 +39,8 @@ const defaultRoutes = [
     route: orderRoute,
   },
   {
-    path: '/favouriteItem',
-    route: favouriteItemRoute,
+    path: '/shop',
+    route: shopRoute,
   },
   {
     path: '/contactUs',

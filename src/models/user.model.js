@@ -54,6 +54,16 @@ const userSchema = mongoose.Schema(
       required: false,
       trim: false,
     },
+    // restaurantId: {
+    //   type: mongoose.SchemaTypes.ObjectId,
+    //   ref: 'Restaurant',
+    //   required: true,
+    // },
+    shopIds: {
+      type: [mongoose.SchemaTypes.ObjectId],
+      ref: 'Shop',
+      required: false,
+    },
   },
   {
     timestamps: true,
