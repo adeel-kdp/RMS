@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 const createShop = {
   body: Joi.object().keys({
-    name: Joi.string().required().unique(true),
+    name: Joi.string().required(),
     address: Joi.string().required(),
   }),
 };

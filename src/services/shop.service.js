@@ -1,37 +1,39 @@
 const httpStatus = require('http-status');
 const Shop = require('../models/shop.model');
 const ApiError = require('../utils/ApiError');
+const { User } = require('../models');
 /**
  * Create a shop
  * @param {Object} shopBody
  * @returns {Promise<Shop>}
  */
 const createShop = async (shopBody, userId) => {
-  const shop = await Shop.findOne({ name: shopBody.name });
-  if (shop) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Shop already exists');
+  const session = await Shop.startSession();
+  session.startTransaction();
+  try {
+    const shop = await Shop.findOne({ name: shopBody.name }).session(session);
+    if (shop) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Shop already exists');
+    }
+
+    const shopData = await Shop.create([{ ...shopBody }], { session });
+
+    // Update the user after the shop is created
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    user.shopIds.push(shopData[0]._id);
+    await user.save({ session });
+
+    await session.commitTransaction();
+    return shopData[0];
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
-
-  // let imageUrl = '';
-  // let imagePublicId = '';
-  // if (shopBody.image) {
-  //   const image = await uploadImage(shopBody.image, 'shop');
-
-  //   imageUrl = image.url;
-  //   imagePublicId = image.public_id;
-  // }
-
-  const shopData = await Shop.create({ ...shopBody});
-
-  // Update the user after the shop is created
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
-  user.shopIds.push(shopData._id);
-  await user.save();
-
-  return shopData;
 };
 
 /**
@@ -108,7 +110,7 @@ const updateShopById = async (shopId, updateBody) => {
 
   // Check if new name already exists (if name is being updated)
   if (updateBody.name && updateBody.name !== shop.name) {
-    const nameExists = await Shop.findOne({ name: updateBody.name, _id: { $ne: shopId } });
+    const nameExists = await Shop.findOne({ name: updateBody.name, _id: { $ne: shopId }, isActive: true });
     if (nameExists) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Shop name already taken');
     }
@@ -177,6 +179,7 @@ const deleteShopById = async (shopId) => {
     shopId,
     {
       isActive: false,
+      name: `Deleted ${shop.name}`,
     },
     {
       new: true,
