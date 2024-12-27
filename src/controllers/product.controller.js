@@ -25,14 +25,11 @@ const getAllProducts = catchAsync(async (req, res) => {
 const getProductsWithPagination = catchAsync(async (req, res) => {
   const filter = pick(req.query, [
     'name',
-    'category',
-    'subCategory',
+    'categoryId',
     'quantity',
     'price',
-    'manufacturingCost',
-    'keywords',
+    'shopId',
     'images',
-    'productType',
     'isActive',
   ]);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);

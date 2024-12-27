@@ -71,7 +71,7 @@ const queryProducts = async (filter, options) => {
   // Execute query with pagination
   const [products, totalProducts] = await Promise.all([
     Product.find(filtered)
-      .populate('category', 'name') // Populate category name
+      .populate('categoryId', 'name') // Populate category name
       .sort(sortOptions)
       .skip(skip)
       .limit(limit)
@@ -171,7 +171,7 @@ const deleteProductById = async (productId) => {
   if (!product) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
-  await Product.findByIdAndUpdate(productId, { isActive: false }, { new: true });
+  await Product.findByIdAndUpdate(productId, {name: `Deleted ${product.name}`, isActive: false }, { new: true });
   return product;
 };
 

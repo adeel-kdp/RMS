@@ -9,12 +9,27 @@ const productSchema = mongoose.Schema(
       required: true,
       trim: true,
     },
-    category: {
+    categoryId: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: 'Category',
       required: true,
     },
-    subCategory: {
+    shopId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'Shop',
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    tax: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    unit: {
       type: String,
       required: true,
       trim: true,
@@ -24,33 +39,8 @@ const productSchema = mongoose.Schema(
       required: true,
       min: 0,
     },
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
     description: {
       type: String,
-    },
-    manufacturingCost: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    keywords: {
-      newArrival: {
-        type: Boolean,
-        default: false,
-      },
-      bestSeller: {
-        type: Boolean,
-        default: false,
-      },
-      discounted: {
-        type: Boolean,
-        default: false,
-      },
-      custom: [String],
     },
     images: [{
         url: {
@@ -64,15 +54,15 @@ const productSchema = mongoose.Schema(
         },
       },
     ],
-    productType: {
-      type: String,
-      required: false,
-      enum: ['Digital Products', '3d Characters', '2D Characters'],
-    },
-    isPopular: {
-      type: Boolean,
-      default: false,
-    },
+    dealProducts: [{
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+      },
+      quantity: {
+        type: Number,
+      },
+    }],
     isActive: {
       type: Boolean,
       default: true,
