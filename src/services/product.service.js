@@ -103,16 +103,63 @@ const queryProductsByFilter = async (filter) => {
     }
   });
   filtered.isActive = true;
+  filtered.parentProduct = { $exists: filtered.parentProduct };
 
-  return Product.find(filtered).lean();
+
+
+  return Product.find(filtered)
+    .sort({ price: -1 })
+    .lean();
 };
+// req.query.haveParents = true
+// if true the return the products that have products in parents 
+// if false return the products that don't have products in parents
+// if undefined or null return all products
+
+// this is part of the modal of product about parentProduct
+//     parentProduct: {
+//       type: mongoose.SchemaTypes.ObjectId,
+//       ref: 'Product',
+//       required: false,
+//     },
+//     please use Product.aggregate
+
 /**
  * Get all products
  * @returns {Promise<Product[]>}
  */
+
 const getAllProducts = async () => {
-  return Product.find({ isActive: true }).sort({ createdAt: -1 });
+  return Product.aggregate([
+    { $match: { isActive: true } },
+    { $sort: { price: 1 } },
+  ]);
 };
+
+const getProductsCategorizedByCategory = async () => {
+  return Product.aggregate([
+    { $match: { isActive: true } },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'categoryId',
+        foreignField: '_id',
+        as: 'category',
+      },
+    },
+    { $unwind: '$category' },
+    { $sort: { price: -1 } },
+    {
+      $group: {
+        _id: '$category.name',
+        products: { $push: '$$ROOT' },
+      },
+    },
+  ]);
+};
+
+
+
 
 /**
  * Get product by id
@@ -182,7 +229,8 @@ module.exports = {
   getProductById,
   updateProductById,
   deleteProductById,
-  queryProductsByFilter
+  queryProductsByFilter,
+  getProductsCategorizedByCategory
 };
 
 

@@ -32,9 +32,9 @@ const productSchema = mongoose.Schema(
     unit: {
       type: String,
       required: true,
-      trim: true,
+      trim: true, 
     },
-    quantity: {
+    stock: {
       type: Number,
       required: true,
       min: 0,
@@ -54,6 +54,11 @@ const productSchema = mongoose.Schema(
         },
       },
     ],
+    parentProduct: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'Product',
+      required: false,
+    },
     dealProducts: [{
       productId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -63,6 +68,14 @@ const productSchema = mongoose.Schema(
         type: Number,
       },
     }],
+    isStockAble: {
+      type: Boolean,
+      default: true,
+    },
+    isShowcase: {
+      type: Boolean,
+      default: true,
+    },
     isActive: {
       type: Boolean,
       default: true,

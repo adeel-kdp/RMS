@@ -11,16 +11,30 @@ const createProduct = catchAsync(async (req, res) => {
 const getAllProducts = catchAsync(async (req, res) => {
   const filter = pick(req.query, [
     'name',
-    'category',
-    'subCategory',
+    'categoryId',
+    'shopId',
     'price',
-    'keywords',
-    'productType',
+    'parentProduct',
+    'isStockAble',
+    'isShowcase',
     'isActive',
   ]);
   const result = await productService.queryProductsByFilter(filter);
   res.send(result);
 });
+
+// req.query.haveParents = true
+// if true the return the products that have products in parents 
+// if false return the products that don't have products in parents
+// if undefined or null return all products
+
+// this is part of the modal of product about parentProduct
+//     parentProduct: {
+//       type: mongoose.SchemaTypes.ObjectId,
+//       ref: 'Product',
+//       required: false,
+//     },
+//     please use Product.aggregate
 
 const getProductsWithPagination = catchAsync(async (req, res) => {
   const filter = pick(req.query, [
@@ -31,6 +45,7 @@ const getProductsWithPagination = catchAsync(async (req, res) => {
     'shopId',
     'images',
     'isActive',
+    'isStockAble',
   ]);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
@@ -48,6 +63,13 @@ const getProduct = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
   res.send(product);
+});
+const getProductsCategorizedByCategory = catchAsync(async (req, res) => {
+  const products = await productService.getProductsCategorizedByCategory();
+  if (!products) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+  res.send(products);
 });
 
 const updateProduct = catchAsync(async (req, res) => {
@@ -67,4 +89,5 @@ module.exports = {
   getProduct,
   updateProduct,
   deleteProduct,
+  getProductsCategorizedByCategory
 };

@@ -9,8 +9,9 @@ const createProduct = {
     price: Joi.number().min(0).required(),
     tax: Joi.number().min(0).default(0),
     unit: Joi.string().required().trim(),
-    quantity: Joi.number().integer().min(0),
+    stock: Joi.number().integer().min(0),
     description: Joi.string().allow('', null),
+    parentProduct: Joi.string().custom(objectId).optional(),
     images: Joi.array()
       .items(
         Joi.object().keys({
@@ -18,13 +19,16 @@ const createProduct = {
         })
       )
       .required(),
-    dealProducts: Joi.array().items(
-      Joi.object().keys({
-        productId: Joi.string().custom(objectId).required(),
-        quantity: Joi.number().integer().min(0).required(),
-      })
-    ).default([]),
-
+    dealProducts: Joi.array()
+      .items(
+        Joi.object().keys({
+          productId: Joi.string().custom(objectId).required(),
+          quantity: Joi.number().integer().min(0).required(),
+        })
+      )
+      .default([]),
+    isStockAble: Joi.boolean().default(true),
+    isShowcase: Joi.boolean().default(true),
     isActive: Joi.boolean().default(true),
   }),
 };
@@ -47,8 +51,9 @@ const updateProduct = {
       price: Joi.number().min(0).required(),
       tax: Joi.number().min(0).default(0),
       unit: Joi.string().required().trim(),
-      quantity: Joi.number().integer().min(0).required(),
+      stock: Joi.number().integer().min(0).required(),
       description: Joi.string().allow('', null),
+      parentProduct: Joi.string().custom(objectId).optional(),
       images: Joi.array()
         .items(
           Joi.object().keys({
@@ -56,12 +61,16 @@ const updateProduct = {
           })
         )
         .required(),
-        dealProducts: Joi.array().items(
+      dealProducts: Joi.array()
+        .items(
           Joi.object().keys({
             productId: Joi.string().custom(objectId).required(),
             quantity: Joi.number().integer().min(0).required(),
           })
-        ).default([]),
+        )
+        .default([]),
+      isStockAble: Joi.boolean().default(true),
+      isShowcase: Joi.boolean().default(true),
       isActive: Joi.boolean().default(true),
     })
     .min(1),

@@ -12,6 +12,7 @@ router
   .get(productController.getProductsWithPagination);
 
 router.route('/allProducts').get(productController.getAllProducts);
+router.route('/getProductsCategorizedByCategory').get(productController.getProductsCategorizedByCategory);
 
 router
   .route('/:productId')
