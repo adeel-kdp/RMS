@@ -1,20 +1,41 @@
 const mongoose = require('mongoose');
 const { toJSON, paginate } = require('./plugins');
-const { required } = require('joi');
 
 const orderItemSchema = new mongoose.Schema({
-  product: {
+  productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
     required: true,
   },
-  orderQuantity: {
+  purchaseQuantity: {
     type: Number,
     required: true,
   },
   price: {
     type: Number,
     required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  imageUrl: {
+    type: String,
+  },
+  dealProducts: {
+    type: mongoose.Schema.Types.Mixed,
+  },
+  isStockAble: {
+    type: Boolean,
+    required: true,
+  },
+  isParentProduct: {
+    type: Boolean,
+    default: false,
+  },
+  shopId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Shop',
   },
 });
 
@@ -24,7 +45,6 @@ const orderSchema = mongoose.Schema(
       type: String,
       default: () => new mongoose.Types.ObjectId().toHexString(),
     },
-    // user Id
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -50,7 +70,7 @@ const orderSchema = mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ['completed', 'cancelled'],
+      enum: ['completed', 'cancelled', 'pending'],
       default: 'pending',
       required: true,
     },
@@ -69,7 +89,6 @@ const orderSchema = mongoose.Schema(
   }
 );
 
-// add plugin that converts mongoose to json
 orderSchema.plugin(toJSON);
 orderSchema.plugin(paginate);
 

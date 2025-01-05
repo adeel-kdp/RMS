@@ -138,7 +138,7 @@ const getAllProducts = async () => {
 
 const getProductsCategorizedByCategory = async () => {
   return Product.aggregate([
-    { $match: { isActive: true } },
+    { $match: { isActive: true, isShowcase: true } },
     {
       $lookup: {
         from: 'categories',
