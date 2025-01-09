@@ -3,27 +3,24 @@ const { objectId } = require("./custom.validation");
 
 const createOrder = {
   body: Joi.object().keys({
-    // customerId: Joi.string().custom(objectId).required(),
+    orderId: Joi.string().required(),
+    customerName: Joi.string().optional(),
+    customerContactNo: Joi.string().optional(),
     totalAmount: Joi.number().required(),
-    // paymentStatus: Joi.string().valid('unpaid', 'paid').default('unpaid').required(),
-    // paymentMethod: Joi.string().required(),
-    totalItems: Joi.number().required(),
-    orderStatus: Joi.string().valid('completed', 'cancelled', 'pending').default('pending').required(),
-    orderDate: Joi.date().required(),
+    paymentStatus: Joi.string().valid('unpaid', 'paid').default('paid'),
     items: Joi.array().items(
       Joi.object().keys({
         productId: Joi.string().custom(objectId).required(),
-        purchaseQuantity: Joi.number().required(),
+        quantity: Joi.number().required(),
         price: Joi.number().required(),
         name: Joi.string().required(),
-        imageUrl: Joi.string().allow('', null),
-        dealProducts: Joi.any(),
-        isStockAble: Joi.boolean().required(),
-        isParentProduct: Joi.boolean().required(),
-        shopId: Joi.string().custom(objectId).required(),
+        isStockAble: Joi.boolean().optional(),
+        parentProduct: Joi.string().custom(objectId).optional(),
       })
     ).required(),
-    shippingAddress: Joi.string().required(),
+    shippingAddress: Joi.string(),
+    shopId: Joi.string().custom(objectId).required(),
+    userId: Joi.string().custom(objectId).required(),
   }),
 };
 
@@ -38,21 +35,23 @@ const updateOrder = {
     orderId: Joi.string().custom(objectId).required(),
   }),
   body: Joi.object().keys({
-    customerId: Joi.string().custom(objectId),
+    customerName: Joi.string().optional(),
+    customerContactNo: Joi.string().optional(),
     totalAmount: Joi.number(),
-    paymentStatus: Joi.string().valid('unpaid', 'paid'),
-    paymentMethod: Joi.string(),
-    totalItems: Joi.number(),
-    orderStatus: Joi.string().valid('completed', 'cancelled'),
-    orderDate: Joi.date(),
+    paymentStatus: Joi.string().valid('unpaid', 'paid').default('paid').optional(),
     items: Joi.array().items(
       Joi.object().keys({
-        product: Joi.string().custom(objectId),
-        orderQuantity: Joi.number(),
-        price: Joi.number(),
+        productId: Joi.string().custom(objectId).required(),
+        quantity: Joi.number().required(),
+        price: Joi.number().required(),
+        name: Joi.string().required(),
+        isStockAble: Joi.boolean().optional(),
+        parentProduct: Joi.string().custom(objectId).optional(),
       })
     ),
     shippingAddress: Joi.string(),
+    shopId: Joi.string().custom(objectId),
+    userId: Joi.string().custom(objectId),
   })
     .min(1),
 };

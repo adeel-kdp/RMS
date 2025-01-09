@@ -34,6 +34,14 @@ const productSchema = mongoose.Schema(
       required: true,
       trim: true, 
     },
+    isFullPlate: {
+      type: Boolean,
+      default: false,
+    },
+    isHalfPlate: {
+      type: Boolean,
+      default: false,
+    },
     stock: {
       type: Number,
       required: true,

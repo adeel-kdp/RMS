@@ -1,4 +1,5 @@
 const config = require('../config/config');
+const { RegularStock } = require('../models');
 const Order = require('../models/order.model');
 const jwt = require('jsonwebtoken');
 
@@ -9,7 +10,8 @@ const jwt = require('jsonwebtoken');
  */
 
 const createOrder = async (userId, orderBody) => {
-  return Order.create({ ...orderBody, customerId: userId });
+  RegularStock.updateOne
+  return Order.create({ ...orderBody, userId: userId });
 };
 
 /**

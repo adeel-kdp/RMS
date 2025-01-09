@@ -7,7 +7,7 @@ const orderItemSchema = new mongoose.Schema({
     ref: 'Product',
     required: true,
   },
-  purchaseQuantity: {
+  quantity: {
     type: Number,
     required: true,
   },
@@ -19,23 +19,14 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  imageUrl: {
-    type: String,
-  },
-  dealProducts: {
-    type: mongoose.Schema.Types.Mixed,
-  },
   isStockAble: {
     type: Boolean,
     required: true,
   },
-  isParentProduct: {
-    type: Boolean,
-    default: false,
-  },
-  shopId: {
+  parentProduct: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Shop',
+    ref: 'Product',
+    required: false,
   },
 });
 
@@ -43,12 +34,15 @@ const orderSchema = mongoose.Schema(
   {
     orderId: {
       type: String,
-      default: () => new mongoose.Types.ObjectId().toHexString(),
-    },
-    customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
       required: true,
+    },
+    customerName: {
+      type: String,
+      required: false,
+    },
+    customerContactNo: {
+      type: String,
+      required: false,
     },
     totalAmount: {
       type: Number,
@@ -57,30 +51,22 @@ const orderSchema = mongoose.Schema(
     paymentStatus: {
       type: String,
       enum: ['unpaid', 'paid'],
-      default: 'unpaid',
-      required: true,
-    },
-    paymentMethod: {
-      type: String,
-      required: true,
-    },
-    totalItems: {
-      type: Number,
-      required: true,
-    },
-    orderStatus: {
-      type: String,
-      enum: ['completed', 'cancelled', 'pending'],
-      default: 'pending',
-      required: true,
-    },
-    orderDate: {
-      type: Date,
-      required: true,
+      default: 'paid',
+      required: false,
     },
     items: [orderItemSchema],
     shippingAddress: {
       type: String,
+      required: false,
+    },
+    shopId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Shop',
+      required: true,
+    },
+    userId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User',
       required: true,
     },
   },
