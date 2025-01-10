@@ -34,13 +34,9 @@ const productSchema = mongoose.Schema(
       required: true,
       trim: true, 
     },
-    isFullPlate: {
-      type: Boolean,
-      default: false,
-    },
-    isHalfPlate: {
-      type: Boolean,
-      default: false,
+    plateType: {
+      type: String,
+      enum: ['full', 'half'],
     },
     stock: {
       type: Number,

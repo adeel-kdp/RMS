@@ -19,13 +19,18 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  isStockAble: {
-    type: Boolean,
-    required: true,
-  },
+  // isStockAble: {
+  //   type: Boolean,
+  //   required: true,
+  // },
   parentProduct: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
+    required: false,
+  },
+  plateType: {
+    type: String,
+    enum: ['full', 'half'],
     required: false,
   },
 });

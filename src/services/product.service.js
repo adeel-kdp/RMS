@@ -1,7 +1,6 @@
 const httpStatus = require('http-status');
 const Product = require('../models/product.model');
 const ApiError = require('../utils/ApiError');
-const { uploadImage } = require('./cloudinary.service');
 
 /**
  * Create a product
@@ -17,8 +16,7 @@ const createProduct = async (productBody) => {
   const images = [];
   if (productBody.images) {
     for (const image of productBody.images) {
-      // const uploadedImage = await uploadImage(image?.image, 'product');
-      // console.log('uploadedImage ====>>>', uploadedImage);
+   
       const public_id = image.image.split("/").pop().split(".")[0];
 
       images.push({

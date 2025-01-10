@@ -16,11 +16,12 @@ const createOrder = {
         name: Joi.string().required(),
         isStockAble: Joi.boolean().optional(),
         parentProduct: Joi.string().custom(objectId).optional(),
+        plateType: Joi.string().valid('full', 'half').optional(),
+        unit: Joi.string().optional().trim(),
       })
     ).required(),
     shippingAddress: Joi.string(),
     shopId: Joi.string().custom(objectId).required(),
-    userId: Joi.string().custom(objectId).required(),
   }),
 };
 

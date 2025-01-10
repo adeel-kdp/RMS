@@ -33,7 +33,7 @@ if (error) {
 }
 
 module.exports = {
-  env: envVars.NODE_ENV,
+  env: envVars?.NODE_ENV || 'development',
   port: envVars.PORT,
   mongoose: {
     // url: envVars.MONGODB_URL + (envVars.NODE_ENV === 'test' ? '-test' : ''),

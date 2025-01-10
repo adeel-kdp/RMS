@@ -2,10 +2,18 @@ const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const { orderService } = require('../services');
 const pick = require('../utils/pick');
+const mongoose = require('mongoose');
 
 const createOrder = catchAsync(async (req, res) => {
-  const order = await orderService.createOrder(req.user, req.body);
-  res.status(httpStatus.CREATED).send(order);
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const order = await orderService.createOrder(req.user, req.body, session);
+      res.status(httpStatus.CREATED).send(order);
+    });
+  } finally {
+    await session.endSession();
+  }
 });
 
 const getOrdersWithPagination = catchAsync(async (req, res) => {
@@ -26,7 +34,7 @@ const getOrdersWithPaginationByCustomerId = catchAsync(async (req, res) => {
   // Convert string values to appropriate types
   if (options.limit) options.limit = parseInt(options.limit);
   if (options.page) options.page = parseInt(options.page);
-  
+
   const result = await orderService.queryOrders(filter, options);
   res.send(result);
 });
