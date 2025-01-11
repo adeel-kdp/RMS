@@ -18,6 +18,13 @@ const createOrder = {
         parentProduct: Joi.string().custom(objectId).optional(),
         plateType: Joi.string().valid('full', 'half').optional(),
         unit: Joi.string().optional().trim(),
+        dealProducts: Joi.array().items(
+          Joi.object().keys({
+            productId: Joi.string().custom(objectId).optional(),
+            quantity: Joi.number().integer().min(0).optional(),
+            _id: Joi.string().custom(objectId).optional(),
+          })
+        ).optional(),
       })
     ).required(),
     shippingAddress: Joi.string(),
@@ -48,6 +55,15 @@ const updateOrder = {
         name: Joi.string().required(),
         isStockAble: Joi.boolean().optional(),
         parentProduct: Joi.string().custom(objectId).optional(),
+        plateType: Joi.string().valid('full', 'half').optional(),
+        unit: Joi.string().optional().trim(),
+        dealProducts: Joi.array().items(
+          Joi.object().keys({
+            productId: Joi.string().custom(objectId).optional(),
+            quantity: Joi.number().integer().min(0).optional(),
+            _id: Joi.string().custom(objectId).optional(),
+          })
+        ).optional(),
       })
     ),
     shippingAddress: Joi.string(),

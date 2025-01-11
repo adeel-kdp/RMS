@@ -17,7 +17,7 @@ const orderItemSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    required: true,
+    required: false,
   },
   // isStockAble: {
   //   type: Boolean,
@@ -33,6 +33,10 @@ const orderItemSchema = new mongoose.Schema({
     enum: ['full', 'half'],
     required: false,
   },
+  // dealProducts: [{
+  //   type: orderItemSchema,
+  //   required: false,
+  // }],
 });
 
 const orderSchema = mongoose.Schema(

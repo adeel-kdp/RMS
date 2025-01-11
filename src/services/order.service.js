@@ -18,104 +18,111 @@ const createOrder = async (userId, orderBody, session) => {
       $gte: new Date(today).setHours(0, 0, 0, 0),
       $lt: new Date(today).setHours(23, 59, 59, 999),
     },
-  })
-    .sort({ createdAt: 1 })
-    .session(session);
+  }).sort({ createdAt: 1 });
 
   if (!regularStocks.length) {
     throw new Error('No Stocks Found For Today');
   }
-  // Create a map of items for easier lookup
+
+  // Create a map of items with deep clone to avoid reference issues
   const items = orderBody.items.reduce((acc, item) => {
-    acc[item.productId] = { ...item };
+    const key = item?.parentProduct || item.productId;
+    if (!acc[key]) {
+      acc[key] = item?.parentProduct ? [] : { ...item, remainingQuantity: item.quantity };
+    }else if (!item?.parentProduct) {
+      acc[key] = { ...item, quantity: acc[key].quantity + item.quantity, remainingQuantity: acc[key].remainingQuantity + item.quantity };
+    }
+    if (item?.parentProduct) {
+      acc[key].push({ ...item, remainingQuantity: item.quantity });
+    }
+    if (item?.dealProducts?.length) {
+      item.dealProducts.forEach((product) => {
+        if (acc[product.productId]) {
+          acc[product.productId].remainingQuantity += product.quantity * item.quantity;
+          acc[product.productId].quantity += product.quantity * item.quantity;
+        } else {
+          acc[product.productId] = { ...product, remainingQuantity: product.quantity * item.quantity, quantity: product.quantity * item.quantity };
+        }
+      });
+    }
     return acc;
   }, {});
 
+  // Process regular stocks
   await Promise.all(
     regularStocks.map(async (regularStock) => {
       let isModified = false;
-      regularStock.items.forEach((stock) => {
+      const updatedItems = regularStock.items.map((stock) => {
         const orderItem = items[stock.productId];
-        console.log("orderItem ====>>>",orderItem);
-        if (!orderItem) return;
+        if (!orderItem) return stock;
 
-        if (orderItem.quantity && !orderItem.parentProduct) {
+        const stockCopy = { ...stock };
+        if (orderItem?.remainingQuantity > 0 && !orderItem?.parentProduct) {
           // Handle regular products
-          console.log("22  ====>>>");
-          if (stock.quantity > stock.consumedQuantity) {
-          console.log("33  ====>>>");
+          const availableQuantity = stock.quantity - (stock.consumedQuantity || 0);
+          const quantityToConsume = Math.min(orderItem.remainingQuantity, availableQuantity);
 
-            const availableQuantity = stock.quantity - (stock.consumedQuantity || 0);
-            const quantityToConsume = Math.min(orderItem.quantity, availableQuantity);
-
+          if (quantityToConsume > 0) {
             stock.consumedQuantity = (stock.consumedQuantity || 0) + quantityToConsume;
-            items[stock.productId] -= quantityToConsume;
-          console.log("44  ====>>>");
-
+            orderItem.remainingQuantity -= quantityToConsume;
             isModified = true;
           }
-        } else if (orderItem.parentProduct) {
-          console.log("55  ====>>>");
+        } else if (orderItem.length > 0) {
+          // Handle plates
+          for (let i = 0; i < orderItem.length; i++) {
+            const element = orderItem[i];
 
-          // Handle products with parent products (plates)
-          stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + orderItem.quantity;
-          stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + orderItem.quantity;
-          items[stock.productId] -= orderItem.quantity;
-          isModified = true;
+            if (element?.parentProduct && element?.remainingQuantity > 0) {
+              console.log('element', element);
+
+              // Handle products with parent products (plates)
+              if (element.plateType === 'full') {
+                stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + element.remainingQuantity;
+
+              } else if (element.plateType === 'half') {
+                stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + element.remainingQuantity;
+              }
+              orderItem[i].remainingQuantity = 0;
+              isModified = true;
+            }
+          }
         }
+        return stock;
       });
-      console.log("66  ====>>>");
 
       // Only save if modifications were made
       if (isModified) {
         await RegularStock.findOneAndUpdate(
           { _id: regularStock._id },
-          {
-            $set: {
-              items: regularStock.items,
-            },
-          },
-          {
-            new: true,
-            session,
-          }
+          { $set: { items: updatedItems } },
+          { new: true, session }
         );
-      }
-    }),
-    Object.entries(items).map(async ([productId, item]) => {
-      if (item.isStockAble) {
-        await Product.findByIdAndUpdate(productId, {
-          $inc: {
-            stock: -item.quantity,
-          },
-        });
       }
     })
   );
 
-  // Verify all items were fulfilled
-  const unfulfilledItems = Object.values(items).filter((item) => item.quantity > 0);
-  console.log("unfulfilledItems", unfulfilledItems);
-  
+  // Handle stockable products
+  await Promise.all(
+    Object.values(items)
+      .filter((item) => item?.isStockAble && item?.remainingQuantity > 0)
+      .map(async (item) => {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.remainingQuantity } }, { session });
+        item.remainingQuantity = 0;
+      })
+  );
+
+  const unfulfilledItems = Object.values(items).flatMap((item) =>
+    Array.isArray(item) ? item.filter((subItem) => subItem.remainingQuantity > 0) : item.remainingQuantity > 0 ? [item] : []
+  );
+
   if (unfulfilledItems.length > 0) {
     throw new Error(`Insufficient stock for items: ${unfulfilledItems.map((item) => item.name).join(', ')}`);
   }
 
-  // // Create the order within the transaction
-  const order = await Order.create(
-    [
-      {
-        ...orderBody,
-        userId: userId,
-      },
-    ],
-    { session }
-  );
+  // Create the order within the transaction
+  const [order] = await Order.create([{ ...orderBody, userId }], { session });
 
-  // Commit the transaction
-  return order[0]; // Return the first (and only) created order
-
-  // return Order.create({ ...orderBody, userId: userId });
+  return order;
 };
 
 /**
