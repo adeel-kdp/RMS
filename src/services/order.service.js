@@ -15,8 +15,8 @@ const createOrder = async (userId, orderBody, session) => {
     userId,
     shopId: orderBody.shopId,
     createdAt: {
-      $gte: new Date().setHours(0, 0, 0, 0),
-      $lt: new Date().setHours(23, 59, 59, 999),
+      $gte: new Date(today).setHours(0, 0, 0, 0),
+      $lt: new Date(today).setHours(23, 59, 59, 999),
     },
   }).sort({ createdAt: 1 });
 
