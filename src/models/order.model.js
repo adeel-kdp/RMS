@@ -53,6 +53,11 @@ const orderSchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    customerType: {
+      type: String,
+      enum: ['eatIn', 'takeAway', 'delivery'],
+      required: true,
+    },
     totalAmount: {
       type: Number,
       required: true,
@@ -78,6 +83,7 @@ const orderSchema = mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    
   },
   {
     timestamps: true,

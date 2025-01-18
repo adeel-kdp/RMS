@@ -6,6 +6,7 @@ const createOrder = {
     orderId: Joi.string().required(),
     customerName: Joi.string().optional(),
     customerContactNo: Joi.string().optional(),
+    customerType: Joi.string().valid('eatIn', 'takeAway', 'delivery').optional(),
     totalAmount: Joi.number().required(),
     paymentStatus: Joi.string().valid('unpaid', 'paid').default('paid'),
     items: Joi.array().items(
@@ -45,6 +46,7 @@ const updateOrder = {
   body: Joi.object().keys({
     customerName: Joi.string().optional(),
     customerContactNo: Joi.string().optional(),
+    customerType: Joi.string().valid('eatIn', 'takeAway', 'delivery').optional(),
     totalAmount: Joi.number(),
     paymentStatus: Joi.string().valid('unpaid', 'paid').default('paid').optional(),
     items: Joi.array().items(

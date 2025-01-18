@@ -9,7 +9,27 @@ const ApiError = require('../utils/ApiError');
  * @returns {Promise<RegularStock>}
  */
 const createRegularStock = async (regularStockBody, userId) => {
-  return RegularStock.create({ ...regularStockBody, userId });
+  const session = await RegularStock.startSession();
+  session.startTransaction();
+  try {
+    await RegularStock.updateMany(
+      {
+        createdAt: { $gte: new Date().setHours(0, 0, 0, 0) },
+        shopId: regularStockBody.shopId,
+      },
+      { $set: { 'items.$[item].isAvailable': false } },
+      { arrayFilters: [{ 'item.isAvailable': true }], session }
+    );
+
+    const newStock = await RegularStock.create([{ ...regularStockBody, userId }], { session });
+    await session.commitTransaction();
+    return newStock[0];
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 /**
@@ -19,7 +39,7 @@ const createRegularStock = async (regularStockBody, userId) => {
  * @returns {Promise<QueryResult>}
  */
 const queryRegularStocks = async (filter, options) => {
-  const regularstock = await RegularStock.find()
+  const regularstock = await RegularStock.find();
   return regularstock;
 };
 
@@ -64,7 +84,7 @@ const getRegularStocksWithPagination = async (filter, options) => {
         path: 'items.productId',
         select: ['name', 'price', 'images', 'isShowcase'],
       })
-      .sort({ updatedAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(), // Add lean() for better performance
@@ -81,7 +101,6 @@ const getRegularStocksWithPagination = async (filter, options) => {
     totalResults: totalRegularStocks,
   };
 };
-
 
 /**
  * Get regularstock by id
@@ -128,11 +147,69 @@ const deleteRegularStockById = async (id) => {
   return regularstock;
 };
 
+const getTodayRegularStocks = async (shopId) => {
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`createdAt: { $gte: ${new Date().setHours(0, 0, 0, 0)}, $lt: ${new Date().setHours(23, 59, 59, 999)} }`);
+  const regularStocks = await RegularStock.find({
+    shopId,
+    createdAt: { $gte: new Date().setHours(0, 0, 0, 0), $lt: new Date().setHours(23, 59, 59, 999) },
+  })
+    .populate({
+      path: 'items.productId',
+      select: ['name', 'price'],
+      // populate: {
+      //   path: 'dealProducts.productId',
+      //   select: 'name price',
+      // },
+    })
+    .lean();
+  const result = {};
+  for (let i = 0; i < regularStocks.length; i++) {
+    const stock = regularStocks[i];
+    for (let j = 0; j < stock.items.length; j++) {
+      const product = stock.items[j];
+      // (halfPlateConsumedQuantity, fullPlateConsumedQuantity, isAvailable) means that prodcut is child product, other is parent
+      if (
+        // !result[product.productId._id] &&
+        product.hasOwnProperty('fullPlateConsumedQuantity') &&
+        product.hasOwnProperty('halfPlateConsumedQuantity')
+        // product.isAvailable
+      ) {
+        if (product.isAvailable) {
+          if (!result[product.productId._id]) {
+            result[product.productId._id] = product;
+            result[product.productId._id].count = 0;
+          } else {
+            result[product.productId._id] = { ...result[product.productId._id], ...product };
+          }
+        } else if (!result[product.productId._id]) {
+          result[product.productId._id] = product;
+          result[product.productId._id].count = 0;
+        }
+        result[product.productId._id].count += 1;
+      }
+
+      if (!result[product.productId._id] && !product.hasOwnProperty('halfPlateConsumedQuantity')) {
+        result[product.productId._id] = product;
+      } else if (
+        !product.hasOwnProperty('fullPlateConsumedQuantity') &&
+        !product.hasOwnProperty('halfPlateConsumedQuantity')
+      ) {
+        result[product.productId._id].quantity += product.quantity;
+        result[product.productId._id].consumedQuantity += product.consumedQuantity;
+      }
+    }
+  }
+
+  return result;
+};
+
 module.exports = {
   createRegularStock,
   queryRegularStocks,
   getRegularStockById,
   updateRegularStockById,
   deleteRegularStockById,
-  getRegularStocksWithPagination
+  getRegularStocksWithPagination,
+  getTodayRegularStocks,
 };

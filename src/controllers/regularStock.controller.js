@@ -57,11 +57,18 @@ const deleteRegularStock = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const getTodayRegularStocks = catchAsync(async (req, res) => {
+  const regularStocks = await regularStockService.getTodayRegularStocks(req.params.shopId);
+  res.send(regularStocks);
+});
+
+
 module.exports = {
   createRegularStock,
   getRegularStocks,
   getRegularStock,
   updateRegularStock,
   deleteRegularStock,
-  getRegularStocksWithPagination
+  getRegularStocksWithPagination,
+  getTodayRegularStocks
 };

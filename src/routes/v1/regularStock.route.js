@@ -15,6 +15,12 @@ router
   .route('/:regularStockId')
   .get(auth.verifyToken(), validate(regularStockValidation.getRegularStock), regularStockController.getRegularStock)
   .put(auth.verifyToken(), validate(regularStockValidation.updateRegularStock), regularStockController.updateRegularStock)
-  .delete(auth.verifyToken(), validate(regularStockValidation.deleteRegularStock), regularStockController.deleteRegularStock);
+  .delete(
+    auth.verifyToken(),
+    validate(regularStockValidation.deleteRegularStock),
+    regularStockController.deleteRegularStock
+  );
+
+router.route('/todayStock/:shopId').get(auth.verifyToken(), regularStockController.getTodayRegularStocks);
 
 module.exports = router;
