@@ -14,14 +14,32 @@ const createRegularStock = async (regularStockBody, userId) => {
 
   session.startTransaction();
   try {
-    await RegularStock.updateMany(
-      {
-        createdAt: { $gte: new Date(today).setHours(0, 0, 0, 0) },
-        shopId: regularStockBody.shopId,
-      },
-      { $set: { 'items.$[item].isAvailable': false } },
-      { arrayFilters: [{ 'item.isAvailable': true }], session }
-    );
+    // if (regularStockBody.items.some((item) => !item.hasOwnProperty('halfPlateConsumedQuantity'))) {
+    //   await RegularStock.updateMany(
+    //     {
+    //       createdAt: { $gte: new Date(today).setHours(0, 0, 0, 0) },
+    //       shopId: regularStockBody.shopId,
+    //     },
+    //     {
+    //       $set: {
+    //         'items.$[item].isAvailable': false,
+    //       },
+    //     },
+    //     { arrayFilters: [{ 'item.isAvailable': true }], session }
+    //   );
+    // }
+    const isAvailable = regularStockBody.items.some((item) => item.hasOwnProperty('halfPlateConsumedQuantity'));
+
+    if (isAvailable) {
+      await RegularStock.updateMany(
+        {
+          createdAt: { $gte: new Date(today).setHours(0, 0, 0, 0) },
+          shopId: regularStockBody.shopId,
+        },
+        { $set: { 'items.$[item].isAvailable': false } },
+        { arrayFilters: [{ 'item.isAvailable': true }], session }
+      );
+    }
 
     const newStock = await RegularStock.create([{ ...regularStockBody, userId }], { session });
     await session.commitTransaction();
@@ -151,7 +169,9 @@ const deleteRegularStockById = async (id) => {
 
 const getTodayRegularStocks = async (shopId) => {
   const today = new Date().toISOString().split('T')[0];
-  console.log(`createdAt: { $gte: ${new Date(today).setHours(0, 0, 0, 0)}, $lt: ${new Date(today).setHours(23, 59, 59, 999)} }`);
+  console.log(
+    `createdAt: { $gte: ${new Date(today).setHours(0, 0, 0, 0)}, $lt: ${new Date(today).setHours(23, 59, 59, 999)} }`
+  );
   const regularStocks = await RegularStock.find({
     shopId,
     createdAt: { $gte: new Date().setHours(0, 0, 0, 0), $lt: new Date().setHours(23, 59, 59, 999) },
