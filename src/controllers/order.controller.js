@@ -71,6 +71,11 @@ const getOrder = catchAsync(async (req, res) => {
   res.send(order);
 });
 
+const calculateZeroQuantityItemPriceController = catchAsync(async (req, res) => {
+  const total = await orderService.calculateZeroQuantityItemPrice();
+  res.send({ total });
+});
+
 module.exports = {
   createOrder,
   getOrdersWithPagination,
@@ -78,4 +83,5 @@ module.exports = {
   getOrder,
   updateOrderById,
   cancelOrderById,
+  calculateZeroQuantityItemPriceController,
 };

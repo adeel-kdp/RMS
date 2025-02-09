@@ -456,10 +456,25 @@ const revertStockChanges = async (order, session) => {
   );
 };
 
+const calculateZeroQuantityItemPrice = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const orders = await Order.find({ createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') }, 'items.quantity': 0 });
+
+  const total = orders.reduce((acc, order) => {
+    const zeroQuantityItems = order.items.filter((item) => item.quantity === 0);
+    return acc + zeroQuantityItems.reduce((itemAcc, item) => itemAcc + item.price, 0);
+  }, 0);
+
+  console.log(`Total price of items with 0 quantity: ${total}`);
+
+  return total;
+};
+
 module.exports = {
   createOrder,
   queryOrders,
   getOrderById,
   updateOrderById,
   cancelOrderById,
+  calculateZeroQuantityItemPrice,
 };

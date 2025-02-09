@@ -16,6 +16,8 @@ router.route('/byCustomerId').get(auth.verifyToken(), orderController.getOrdersW
 router.route('/:orderId').get(orderController.getOrder);
 
 router.route('/updateOrderById/:orderId').put(auth.verifyToken(), orderController.updateOrderById);
+router.route('/calculateZeroQuantityItemPrice').put(auth.verifyToken(), orderController.updateOrderById);
+
 router.route('/cancelOrderById/:orderId').delete(auth.verifyToken(), orderController.cancelOrderById);
 
 module.exports = router;

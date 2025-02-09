@@ -146,7 +146,7 @@ const getProductsCategorizedByCategory = async () => {
       },
     },
     { $unwind: '$category' },
-    { $sort: { index: 1, 'category.name': -1 } },
+    { $sort: { index: 1 } },
     {
       $group: {
         _id: '$category.name',
