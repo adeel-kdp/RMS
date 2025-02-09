@@ -16,6 +16,30 @@ const createOrder = catchAsync(async (req, res) => {
   }
 });
 
+const updateOrderById = catchAsync(async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const order = await orderService.updateOrderById(req.user, req.params.orderId, req.body, session);
+      res.send(order);
+    });
+  } finally {
+    await session.endSession();
+  }
+});
+
+const cancelOrderById = catchAsync(async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const order = await orderService.cancelOrderById(req.user, req.params.orderId, session);
+      res.send(order);
+    });
+  } finally {
+    await session.endSession();
+  }
+});
+
 const getOrdersWithPagination = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['orderId']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
@@ -52,4 +76,6 @@ module.exports = {
   getOrdersWithPagination,
   getOrdersWithPaginationByCustomerId,
   getOrder,
+  updateOrderById,
+  cancelOrderById,
 };
