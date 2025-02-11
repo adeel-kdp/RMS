@@ -185,7 +185,7 @@ const queryOrders = async (filter, options) => {
  * @returns {Promise<Order>}
  */
 const getOrderById = async (id) => {
-  return Order.findById(id)
+  return Order.findOne({orderId: id})
     .populate({
       path: 'customerId',
       select: 'name email', // Add more fields if needed
@@ -206,7 +206,7 @@ const getOrderById = async (id) => {
  */
 const updateOrderById = async (userId, orderId, updateBody, session) => {
   // First get the existing order
-  const existingOrder = await Order.findOne({ _id: orderId, userId });
+  const existingOrder = await Order.findOne({ _id: orderId });
 
   if (!existingOrder) {
     throw new Error('Order not found');
@@ -336,7 +336,7 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
   }
 
   // Update the order
-  const updatedOrder = await Order.findByIdAndUpdate(orderId, { $set: updateBody }, { new: true, session });
+  const updatedOrder = await Order.findByIdAndUpdate(orderId, updateBody, { new: true, session });
 
   return updatedOrder;
 };
@@ -470,6 +470,27 @@ const calculateZeroQuantityItemPrice = async () => {
   return total;
 };
 
+const calculateTodayTotalCountOrders = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const count = await Order.countDocuments({ createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } });
+
+  console.log(`Total count of orders for today: ${count}`);
+
+  return count;
+};
+
+const calculateTotalRevenue = async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const revenue = await Order.aggregate([
+    { $match: { createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } } },
+    { $group: { _id: null, revenue: { $sum: '$totalAmount' } } },
+  ]);
+
+  console.log(`Total revenue for today: ${revenue[0].revenue}`);
+
+  return revenue[0].revenue;
+};
+
 module.exports = {
   createOrder,
   queryOrders,
@@ -477,4 +498,6 @@ module.exports = {
   updateOrderById,
   cancelOrderById,
   calculateZeroQuantityItemPrice,
+  calculateTodayTotalCountOrders,
+  calculateTotalRevenue,
 };

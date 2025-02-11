@@ -3,6 +3,7 @@ const catchAsync = require('../utils/catchAsync');
 const { orderService } = require('../services');
 const pick = require('../utils/pick');
 const mongoose = require('mongoose');
+const ApiError = require('../utils/ApiError');
 
 const createOrder = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
@@ -71,10 +72,22 @@ const getOrder = catchAsync(async (req, res) => {
   res.send(order);
 });
 
-const calculateZeroQuantityItemPriceController = catchAsync(async (req, res) => {
+const calculateZeroQuantityItemPrice = catchAsync(async (req, res) => {
   const total = await orderService.calculateZeroQuantityItemPrice();
   res.send({ total });
 });
+
+const orderKpis = catchAsync(async (req, res) => {
+  const totalOrders = await orderService.calculateTodayTotalCountOrders();
+  const totalRevenue = await orderService.calculateTotalRevenue();
+  
+  res.send({
+    totalOrders,
+    totalRevenue,
+   
+  });
+});
+
 
 module.exports = {
   createOrder,
@@ -83,5 +96,6 @@ module.exports = {
   getOrder,
   updateOrderById,
   cancelOrderById,
-  calculateZeroQuantityItemPriceController,
+  calculateZeroQuantityItemPrice,
+  orderKpis
 };

@@ -19,10 +19,10 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  // isStockAble: {
-  //   type: Boolean,
-  //   required: true,
-  // },
+  isStockAble: {
+    type: Boolean,
+    required: true,
+  },
   parentProduct: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
