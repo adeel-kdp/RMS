@@ -130,29 +130,29 @@ const queryProductsByFilter = async (filter) => {
 const getAllProducts = async () => {
   return Product.aggregate([
     { $match: { isActive: true } },
-    { $sort: { price: 1 } },
+    { $sort: { index: 1 } },
   ]);
 };
 
 const getProductsCategorizedByCategory = async () => {
   return Product.aggregate([
     { $match: { isActive: true, isShowcase: true } },
-    {
-      $lookup: {
-        from: 'categories',
-        localField: 'categoryId',
-        foreignField: '_id',
-        as: 'category',
-      },
-    },
-    { $unwind: '$category' },
-    { $sort: { price: -1 } },
-    {
-      $group: {
-        _id: '$category.name',
-        products: { $push: '$$ROOT' },
-      },
-    },
+    // {
+    //   $lookup: {
+    //     from: 'categories',
+    //     localField: 'categoryId',
+    //     foreignField: '_id',
+    //     as: 'category',
+    //   },
+    // },
+    // { $unwind: '$category' },
+    { $sort: { index: 1 } },
+    // {
+    //   $group: {
+    //     _id: '$category.name',
+    //     products: { $push: '$$ROOT' },
+    //   },
+    // },
   ]);
 };
 

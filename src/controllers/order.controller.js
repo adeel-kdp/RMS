@@ -3,6 +3,7 @@ const catchAsync = require('../utils/catchAsync');
 const { orderService } = require('../services');
 const pick = require('../utils/pick');
 const mongoose = require('mongoose');
+const ApiError = require('../utils/ApiError');
 
 const createOrder = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
@@ -10,6 +11,30 @@ const createOrder = catchAsync(async (req, res) => {
     await session.withTransaction(async () => {
       const order = await orderService.createOrder(req.user, req.body, session);
       res.status(httpStatus.CREATED).send(order);
+    });
+  } finally {
+    await session.endSession();
+  }
+});
+
+const updateOrderById = catchAsync(async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const order = await orderService.updateOrderById(req.user, req.params.orderId, req.body, session);
+      res.send(order);
+    });
+  } finally {
+    await session.endSession();
+  }
+});
+
+const cancelOrderById = catchAsync(async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const order = await orderService.cancelOrderById(req.user, req.params.orderId, session);
+      res.send(order);
     });
   } finally {
     await session.endSession();
@@ -47,9 +72,30 @@ const getOrder = catchAsync(async (req, res) => {
   res.send(order);
 });
 
+const calculateZeroQuantityItemPrice = catchAsync(async (req, res) => {
+  const total = await orderService.calculateZeroQuantityItemPrice();
+  res.send({ total });
+});
+
+const orderKpis = catchAsync(async (req, res) => {
+  const totalOrders = await orderService.calculateTodayTotalCountOrders();
+  const totalRevenue = await orderService.calculateTotalRevenue();
+  
+  res.send({
+    totalOrders,
+    totalRevenue,
+   
+  });
+});
+
+
 module.exports = {
   createOrder,
   getOrdersWithPagination,
   getOrdersWithPaginationByCustomerId,
   getOrder,
+  updateOrderById,
+  cancelOrderById,
+  calculateZeroQuantityItemPrice,
+  orderKpis
 };
