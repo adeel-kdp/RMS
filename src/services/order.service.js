@@ -151,17 +151,17 @@ const queryOrders = async (filter, options) => {
   });
   // Prepare sort options
   let sortOptions = {};
-  if (options.sortBy) {
-    // Handle simple sortBy format (e.g., "name")
-    if (!options.sortBy.includes(':')) {
-      sortOptions[options.sortBy] = -1; // Default to ascending
-    } else {
-      // Handle detailed sortBy format (e.g., "name:desc")
-      const [key, order] = options.sortBy.split(':');
-      sortOptions[key] = order === 'desc' ? -1 : 1;
-    }
-  }
-
+  sortOptions.createdAt = -1;
+  // if (options.sortBy) {
+  //   // Handle simple sortBy format (e.g., "name")
+  //   if (!options.sortBy.includes(':')) {
+  //     sortOptions[options.sortBy] = 1; // Default to ascending
+  //   } else {
+  //     // Handle detailed sortBy format (e.g., "name:desc")
+  //     const [key, order] = options.sortBy.split(':');
+  //     sortOptions[key] = order === 'desc' ? -1 : 1;
+  //   }
+  // }
   // Execute query with pagination
   const [orders, totalOrders] = await Promise.all([
     Order.find(filtered).populate('customerId', 'name').sort(sortOptions).skip(skip).limit(limit).lean(), // Add lean() for better performance
