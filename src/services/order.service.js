@@ -154,7 +154,7 @@ const queryOrders = async (filter, options) => {
   if (options.sortBy) {
     // Handle simple sortBy format (e.g., "name")
     if (!options.sortBy.includes(':')) {
-      sortOptions[options.sortBy] = 1; // Default to ascending
+      sortOptions[options.sortBy] = -1; // Default to ascending
     } else {
       // Handle detailed sortBy format (e.g., "name:desc")
       const [key, order] = options.sortBy.split(':');
