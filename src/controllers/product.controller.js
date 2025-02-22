@@ -2,6 +2,7 @@ const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const { productService } = require('../services');
 const pick = require('../utils/pick');
+const ApiError = require('../utils/ApiError');
 
 const createProduct = catchAsync(async (req, res) => {
   const product = await productService.createProduct(req.body);

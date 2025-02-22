@@ -173,7 +173,7 @@ const getTodayRegularStocks = async (shopId) => {
     `createdAt: { $gte: ${new Date(today).setHours(0, 0, 0, 0)}, $lt: ${new Date(today).setHours(23, 59, 59, 999)} }`
   );
   const regularStocks = await RegularStock.find({
-    shopId,
+    // shopId,
     createdAt: { $gte: new Date().setHours(0, 0, 0, 0), $lt: new Date().setHours(23, 59, 59, 999) },
   })
     .populate({

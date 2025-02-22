@@ -486,9 +486,9 @@ const calculateTotalRevenue = async () => {
     { $group: { _id: null, revenue: { $sum: '$totalAmount' } } },
   ]);
 
-  console.log(`Total revenue for today: ${revenue[0].revenue}`);
-
-  return revenue[0].revenue;
+  const totalRevenue = revenue[0]?.revenue || 0;
+  console.log(`Total revenue for today: ${totalRevenue}`);
+  return totalRevenue;
 };
 
 module.exports = {

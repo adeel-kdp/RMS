@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const Product = require('../models/product.model');
 const ApiError = require('../utils/ApiError');
+const { getTodayRegularStocks } = require('./regularStock.service');
 
 /**
  * Create a product
@@ -135,25 +136,40 @@ const getAllProducts = async () => {
 };
 
 const getProductsCategorizedByCategory = async () => {
-  return Product.aggregate([
-    { $match: { isActive: true, isShowcase: true } },
-    // {
-    //   $lookup: {
-    //     from: 'categories',
-    //     localField: 'categoryId',
-    //     foreignField: '_id',
-    //     as: 'category',
-    //   },
-    // },
-    // { $unwind: '$category' },
-    { $sort: { index: 1 } },
-    // {
-    //   $group: {
-    //     _id: '$category.name',
-    //     products: { $push: '$$ROOT' },
-    //   },
-    // },
-  ]);
+//   const todayStock = await getTodayRegularStocks();
+//   console.log('todayStock ====>>>', todayStock);
+//  const products = await  Product.aggregate([
+//     { $match: { isActive: true, isShowcase: true } },
+//     { $sort: { index: 1 } },
+//   ]);
+
+//   const newProducts = [];
+//   for (const product of products) {
+//     const stock = todayStock[product._id] ? todayStock[product._id] : todayStock[product.parentProduct] || {};
+//     product.stock = stock;
+//     newProducts.push(product);
+//   }
+return Product.aggregate([
+  { $match: { isActive: true, isShowcase: true } },
+  // {
+  //   $lookup: {
+  //     from: 'categories',
+  //     localField: 'categoryId',
+  //     foreignField: '_id',
+  //     as: 'category',
+  //   },
+  // },
+  // { $unwind: '$category' },
+  { $sort: { index: 1 } },
+  // {
+  //   $group: {
+  //     _id: '$category.name',
+  //     products: { $push: '$$ROOT' },
+  //   },
+  // },
+]);
+  // return products;
+
 };
 
 
