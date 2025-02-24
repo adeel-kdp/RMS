@@ -185,15 +185,15 @@ const queryOrders = async (filter, options) => {
  * @returns {Promise<Order>}
  */
 const getOrderById = async (id) => {
-  return Order.findOne({orderId: id})
+  return Order.findOne({ _id: id })
     .populate({
-      path: 'customerId',
-      select: 'name email', // Add more fields if needed
+      path: 'items.productId',
+      model: 'Product',
+      select: 'name price images categoryId dealProducts', // Select specific fields
     })
     .populate({
-      path: 'items.product',
-      model: 'Product',
-      select: 'name price images category', // Select specific fields
+      path: 'userId',
+      select: 'name email', // Add more fields if needed
     })
     .lean();
 };
@@ -347,8 +347,8 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
  * @returns {Promise<Order>}
  */
 const cancelOrderById = async (userId, orderId, session) => {
-  const order = await Order.findOne({ _id: orderId });
-
+  // const order = await Order.findOne({ _id: orderId });
+  const order = await getOrderById(orderId);
   if (!order) {
     throw new Error('Order not found');
   }
@@ -390,15 +390,15 @@ const revertStockChanges = async (order, session) => {
 
   // Create a map of items to revert
   const items = order.items.reduce((acc, item) => {
-    const key = item?.parentProduct || item.productId;
+    const key = item?.parentProduct || item.productId._id;
     if (!acc[key]) {
       acc[key] = item?.parentProduct ? [] : { ...item };
     }
     if (item?.parentProduct) {
       acc[key].push(item);
     }
-    if (item?.dealProducts?.length) {
-      item.dealProducts.forEach((product) => {
+    if (item?.productId?.dealProducts?.length) {
+      item.productId.dealProducts.forEach((product) => {
         if (!acc[product.productId]) {
           acc[product.productId] = { ...product, quantity: product.quantity * item.quantity };
         } else {
@@ -417,7 +417,7 @@ const revertStockChanges = async (order, session) => {
         const orderItem = items[stock.productId];
         if (!orderItem) return stock;
 
-        if (!orderItem?.parentProduct) {
+        if (!Array.isArray(orderItem)) {
           if (stock.consumedQuantity) {
             stock.consumedQuantity = Math.max(0, stock.consumedQuantity - orderItem.quantity);
             isModified = true;

@@ -15,7 +15,7 @@ router.route('/calculateZeroQuantityItemPrice').get(orderController.calculateZer
 router.route('/orderKpis').get(orderController.orderKpis);
 router.route('/byCustomerId').get(auth.verifyToken(), orderController.getOrdersWithPaginationByCustomerId);
 
-router.route('/:orderId').get(orderController.getOrder);
+router.route('/:orderId').get(orderController.getOrder).delete(auth.verifyToken(), orderController.cancelOrderById);
 
 router.route('/updateOrderById/:orderId').put(auth.verifyToken(), orderController.updateOrderById);
 
