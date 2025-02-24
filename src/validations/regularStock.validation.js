@@ -8,6 +8,7 @@ const createRegularStock = {
       Joi.object().keys({
         productId: Joi.string().custom(objectId).required(),
         quantity: Joi.number().required(),
+        weight: Joi.number().required(),
         consumedQuantity: Joi.number().optional(),
         halfPlateConsumedQuantity: Joi.number().optional(),
         fullPlateConsumedQuantity: Joi.number().optional(),
@@ -35,6 +36,7 @@ const updateRegularStock = {
         Joi.object().keys({
           productId: Joi.string().custom(objectId).required(),
         quantity: Joi.number().required(),
+        weight: Joi.number().required(),
         consumedQuantity: Joi.number().optional(),
         halfPlateConsumedQuantity: Joi.number().optional(),
         fullPlateConsumedQuantity: Joi.number().optional(),

@@ -24,6 +24,10 @@ const regularStockSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        weight: {
+          type: Number,
+          required: true,
+        },
         consumedQuantity: {
           type: Number,
         },

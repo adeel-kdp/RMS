@@ -347,7 +347,7 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
  * @returns {Promise<Order>}
  */
 const cancelOrderById = async (userId, orderId, session) => {
-  const order = await Order.findOne({ _id: orderId, userId });
+  const order = await Order.findOne({ _id: orderId });
 
   if (!order) {
     throw new Error('Order not found');

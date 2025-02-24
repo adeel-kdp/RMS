@@ -17,12 +17,11 @@ const createProduct = async (productBody) => {
   const images = [];
   if (productBody.images) {
     for (const image of productBody.images) {
-   
-      const public_id = image.image.split("/").pop().split(".")[0];
+      const public_id = image.image.split('/').pop().split('.')[0];
 
       images.push({
         url: image.image,
-        publicId: "product/" + public_id,
+        publicId: 'product/' + public_id,
       });
     }
   }
@@ -104,14 +103,19 @@ const queryProductsByFilter = async (filter) => {
   filtered.isActive = true;
   filtered.parentProduct = { $exists: filtered.parentProduct };
 
+  const products = await Product.find(filtered).sort({ price: -1 }).lean();
 
+  const finalProducts = [];
+  for (const product of products) {
+    const haveChild = await Product.exists({ parentProduct: product._id });
+    product.haveChild = haveChild;
+    finalProducts.push(product);
+  }
 
-  return Product.find(filtered)
-    .sort({ price: -1 })
-    .lean();
+  return finalProducts;
 };
 // req.query.haveParents = true
-// if true the return the products that have products in parents 
+// if true the return the products that have products in parents
 // if false return the products that don't have products in parents
 // if undefined or null return all products
 
@@ -129,51 +133,27 @@ const queryProductsByFilter = async (filter) => {
  */
 
 const getAllProducts = async () => {
-  return Product.aggregate([
-    { $match: { isActive: true } },
-    { $sort: { index: 1 } },
-  ]);
+  return Product.aggregate([{ $match: { isActive: true } }, { $sort: { index: 1 } }]);
 };
 
 const getProductsCategorizedByCategory = async () => {
-//   const todayStock = await getTodayRegularStocks();
-//   console.log('todayStock ====>>>', todayStock);
-//  const products = await  Product.aggregate([
-//     { $match: { isActive: true, isShowcase: true } },
-//     { $sort: { index: 1 } },
-//   ]);
+  // const todayStock = await getTodayRegularStocks();
+  // console.log('todayStock ====>>>', todayStock);
+  // const products = await Product.aggregate([{ $match: { isActive: true, isShowcase: true } }, { $sort: { index: 1 } }]);
 
-//   const newProducts = [];
-//   for (const product of products) {
-//     const stock = todayStock[product._id] ? todayStock[product._id] : todayStock[product.parentProduct] || {};
-//     product.stock = stock;
-//     newProducts.push(product);
-//   }
-return Product.aggregate([
-  { $match: { isActive: true, isShowcase: true } },
-  // {
-  //   $lookup: {
-  //     from: 'categories',
-  //     localField: 'categoryId',
-  //     foreignField: '_id',
-  //     as: 'category',
-  //   },
-  // },
-  // { $unwind: '$category' },
-  { $sort: { index: 1 } },
-  // {
-  //   $group: {
-  //     _id: '$category.name',
-  //     products: { $push: '$$ROOT' },
-  //   },
-  // },
-]);
+  // const newProducts = [];
+  // for (const product of products) {
+  //   const stock = todayStock[product._id] ? todayStock[product._id] : todayStock[product.parentProduct] || {};
+  //   product.stock = stock;
+  //   newProducts.push(product);
+  // }
+
   // return products;
-
+  return Product.aggregate([
+    { $match: { isActive: true, isShowcase: true } },
+    { $sort: { index: 1 } },
+  ]);
 };
-
-
-
 
 /**
  * Get product by id
@@ -210,11 +190,11 @@ const updateProductById = async (productId, updateBody) => {
     for (const image of updateBody.images) {
       // const uploadedImage = await uploadImage(image?.image, 'product');
       // console.log('uploadedImage ====>>>', uploadedImage);
-      const public_id = image.image.split("/").pop().split(".")[0];
+      const public_id = image.image.split('/').pop().split('.')[0];
 
       images.push({
         url: image.image,
-        publicId: "product/" + public_id,
+        publicId: 'product/' + public_id,
       });
     }
   }
@@ -232,7 +212,7 @@ const deleteProductById = async (productId) => {
   if (!product) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
   }
-  await Product.findByIdAndUpdate(productId, {name: `Deleted ${product.name}`, isActive: false }, { new: true });
+  await Product.findByIdAndUpdate(productId, { name: `Deleted ${product.name}`, isActive: false }, { new: true });
   return product;
 };
 
@@ -244,7 +224,5 @@ module.exports = {
   updateProductById,
   deleteProductById,
   queryProductsByFilter,
-  getProductsCategorizedByCategory
+  getProductsCategorizedByCategory,
 };
-
-
