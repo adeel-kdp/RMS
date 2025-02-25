@@ -16,6 +16,7 @@ router.route('/orderKpis').get(orderController.orderKpis);
 router.route('/byCustomerId').get(auth.verifyToken(), orderController.getOrdersWithPaginationByCustomerId);
 
 router.route('/:orderId').get(orderController.getOrder).delete(auth.verifyToken(), orderController.cancelOrderById);
+router.route('/getOrderByOrderId/:orderId').get(orderController.getOrderByOrderId);
 
 router.route('/updateOrderById/:orderId').put(auth.verifyToken(), orderController.updateOrderById);
 

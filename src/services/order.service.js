@@ -197,6 +197,14 @@ const getOrderById = async (id) => {
     })
     .lean();
 };
+/**
+ * Get order by id
+ * @param {ObjectId} id
+ * @returns {Promise<Order>}
+ */
+const getOrderByOrderId = async (id) => {
+  return Order.findOne({ orderId: id }).lean();
+};
 
 /**
  * Update an order
@@ -206,7 +214,8 @@ const getOrderById = async (id) => {
  */
 const updateOrderById = async (userId, orderId, updateBody, session) => {
   // First get the existing order
-  const existingOrder = await Order.findOne({ _id: orderId });
+  // const existingOrder = await Order.findOne({ _id: orderId });
+  const existingOrder = await getOrderById(orderId);
 
   if (!existingOrder) {
     throw new Error('Order not found');
@@ -365,7 +374,11 @@ const cancelOrderById = async (userId, orderId, session) => {
   await revertStockChanges(order, session);
 
   // Update order paymentStatus to cancelled
-  const cancelledOrder = await Order.findByIdAndUpdate(orderId, { $set: { paymentStatus: 'cancelled' } }, { new: true, session });
+  const cancelledOrder = await Order.findByIdAndUpdate(
+    orderId,
+    { $set: { paymentStatus: 'cancelled' } },
+    { new: true, session }
+  );
 
   return cancelledOrder;
 };
@@ -396,6 +409,8 @@ const revertStockChanges = async (order, session) => {
     }
     if (item?.parentProduct) {
       acc[key].push(item);
+    } else {
+      acc[key].quantity += item.quantity;
     }
     if (item?.productId?.dealProducts?.length) {
       item.productId.dealProducts.forEach((product) => {
@@ -438,7 +453,7 @@ const revertStockChanges = async (order, session) => {
 
       if (isModified) {
         await RegularStock.findOneAndUpdate(
-          { _id: regularStock._id },
+          { _id: regularStock.id },
           { $set: { items: updatedItems } },
           { new: true, session }
         );
@@ -458,7 +473,10 @@ const revertStockChanges = async (order, session) => {
 
 const calculateZeroQuantityItemPrice = async () => {
   const today = new Date().toISOString().split('T')[0];
-  const orders = await Order.find({ createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') }, 'items.quantity': 0 });
+  const orders = await Order.find({
+    createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') },
+    'items.quantity': 0,
+  });
 
   const total = orders.reduce((acc, order) => {
     const zeroQuantityItems = order.items.filter((item) => item.quantity === 0);
@@ -472,7 +490,9 @@ const calculateZeroQuantityItemPrice = async () => {
 
 const calculateTodayTotalCountOrders = async () => {
   const today = new Date().toISOString().split('T')[0];
-  const count = await Order.countDocuments({ createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } });
+  const count = await Order.countDocuments({
+    createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') },
+  });
 
   console.log(`Total count of orders for today: ${count}`);
 
@@ -500,4 +520,5 @@ module.exports = {
   calculateZeroQuantityItemPrice,
   calculateTodayTotalCountOrders,
   calculateTotalRevenue,
+  getOrderByOrderId,
 };

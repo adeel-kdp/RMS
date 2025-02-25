@@ -71,6 +71,13 @@ const getOrder = catchAsync(async (req, res) => {
   }
   res.send(order);
 });
+const getOrderByOrderId = catchAsync(async (req, res) => {
+  const order = await orderService.getOrderByOrderId(req.params.orderId);
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order not found');
+  }
+  res.send(order);
+});
 
 const calculateZeroQuantityItemPrice = catchAsync(async (req, res) => {
   const total = await orderService.calculateZeroQuantityItemPrice();
@@ -97,5 +104,6 @@ module.exports = {
   updateOrderById,
   cancelOrderById,
   calculateZeroQuantityItemPrice,
-  orderKpis
+  orderKpis,
+  getOrderByOrderId
 };
