@@ -213,10 +213,9 @@ const getOrderByOrderId = async (id) => {
  * @returns {Promise<Order>}
  */
 const updateOrderById = async (userId, orderId, updateBody, session) => {
-  // First get the existing order
-  // const existingOrder = await Order.findOne({ _id: orderId });
+  // First get the existing order - INCLUDE SESSION IN QUERY
   const existingOrder = await getOrderById(orderId);
-
+  
   if (!existingOrder) {
     throw new Error('Order not found');
   }
@@ -229,17 +228,30 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
   if (updateBody.items) {
     // First, return the quantities back to stock from existing order
     await revertStockChanges(existingOrder, session);
-
+    for (let i = 0; i < existingOrder.items.length; i++) {
+      const item = existingOrder.items[i];
+      if (item?.productId?.dealProducts?.length) {
+        const a = updateBody.items.findIndex((updateItem) =>  updateItem.name == item.name);
+        if (a !== -1) {
+          updateBody.items[a].dealProducts = item.productId.dealProducts;
+        }
+      }
+    }
     // Then process new quantities like in create order
     const today = new Date().toISOString().split('T')[0];
-    const regularStocks = await RegularStock.find({
-      userId,
-      shopId: existingOrder.shopId,
-      createdAt: {
-        $gte: new Date(today).setHours(0, 0, 0, 0),
-        $lt: new Date(today).setHours(23, 59, 59, 999),
+    // INCLUDE SESSION IN QUERY
+    const regularStocks = await RegularStock.find(
+      {
+        userId,
+        shopId: existingOrder.shopId,
+        createdAt: {
+          $gte: new Date(today).setHours(0, 0, 0, 0),
+          $lt: new Date(today).setHours(23, 59, 59, 999),
+        },
       },
-    }).sort({ createdAt: 1 });
+      null,
+      { session }
+    ).sort({ createdAt: 1 });
 
     if (!regularStocks.length) {
       throw new Error('No Stocks Found For Today');
@@ -298,9 +310,9 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
             for (let i = 0; i < orderItem.length; i++) {
               const element = orderItem[i];
               if (element?.parentProduct && element?.remainingQuantity > 0) {
-                if (element.plateType === 'full') {
+                if (element.name.includes("Full") || element.name.includes("full") || element.name.includes("Double") || element.name.includes("double")) {
                   stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + element.remainingQuantity;
-                } else if (element.plateType === 'half') {
+                } else {
                   stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + element.remainingQuantity;
                 }
                 orderItem[i].remainingQuantity = 0;
@@ -344,7 +356,7 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
     }
   }
 
-  // Update the order
+  // Update the order and include session
   const updatedOrder = await Order.findByIdAndUpdate(orderId, updateBody, { new: true, session });
 
   return updatedOrder;
@@ -392,14 +404,18 @@ const revertStockChanges = async (order, session) => {
   const today = new Date(order.createdAt).toISOString().split('T')[0];
 
   // Get regular stocks for the order date
-  const regularStocks = await RegularStock.find({
-    userId: order.userId,
-    shopId: order.shopId,
-    createdAt: {
-      $gte: new Date(today).setHours(0, 0, 0, 0),
-      $lt: new Date(today).setHours(23, 59, 59, 999),
+  const regularStocks = await RegularStock.find(
+    {
+      userId: order.userId,
+      shopId: order.shopId,
+      createdAt: {
+        $gte: new Date(today).setHours(0, 0, 0, 0),
+        $lt: new Date(today).setHours(23, 59, 59, 999),
+      },
     },
-  });
+    null,
+    { session }
+  );
 
   // Create a map of items to revert
   const items = order.items.reduce((acc, item) => {
@@ -439,10 +455,10 @@ const revertStockChanges = async (order, session) => {
           }
         } else if (Array.isArray(orderItem)) {
           orderItem.forEach((plate) => {
-            if (plate.plateType === 'full' && stock.fullPlateConsumedQuantity) {
+            if ((plate.name.includes("Full") || plate.name.includes("full") || plate.name.includes("Double") || plate.name.includes("double")) && stock.fullPlateConsumedQuantity) {
               stock.fullPlateConsumedQuantity = Math.max(0, stock.fullPlateConsumedQuantity - plate.quantity);
               isModified = true;
-            } else if (plate.plateType === 'half' && stock.halfPlateConsumedQuantity) {
+            } else if (stock.halfPlateConsumedQuantity) {
               stock.halfPlateConsumedQuantity = Math.max(0, stock.halfPlateConsumedQuantity - plate.quantity);
               isModified = true;
             }
