@@ -20,4 +20,6 @@ router
   .put(auth.verifyToken(), validate(productValidation.updateProduct), productController.updateProduct)
   .delete(auth.verifyToken(), validate(productValidation.deleteProduct), productController.deleteProduct);
 
+router.route('/saveProductsRates').post(auth.verifyToken(), productController.saveProductsRates);
+
 module.exports = router;

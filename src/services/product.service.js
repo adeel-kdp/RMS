@@ -216,6 +216,17 @@ const deleteProductById = async (productId) => {
   return product;
 };
 
+const saveProductsRates = async (products) => {
+  return Product.bulkWrite(
+    products.map((product) => ({
+      updateOne: {
+        filter: { _id: product._id },
+        update: { $set: { formula: product.formula, mundiRate: product.mundiRate } },
+      },
+    }))
+  );
+};
+
 module.exports = {
   createProduct,
   queryProducts,
@@ -225,4 +236,5 @@ module.exports = {
   deleteProductById,
   queryProductsByFilter,
   getProductsCategorizedByCategory,
+  saveProductsRates,
 };

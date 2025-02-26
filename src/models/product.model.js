@@ -72,6 +72,18 @@ const productSchema = mongoose.Schema(
         type: Number,
       },
     }],
+    formula: {
+      type: String,
+      trim: true,
+      required: false,
+      default: "*1",
+    },
+    mundiRate: {
+      type: Number,
+      required: false,
+      min: 0,
+      default: 0,
+    },
     isStockAble: {
       type: Boolean,
       default: true,

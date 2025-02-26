@@ -83,6 +83,11 @@ const deleteProduct = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const saveProductsRates = catchAsync(async (req, res) => {
+  const product = await productService.saveProductsRates(req.body.products);
+  res.send(product);
+});
+
 module.exports = {
   createProduct,
   getAllProducts,
@@ -90,5 +95,6 @@ module.exports = {
   getProduct,
   updateProduct,
   deleteProduct,
-  getProductsCategorizedByCategory
+  getProductsCategorizedByCategory,
+  saveProductsRates,
 };
