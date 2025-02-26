@@ -5,6 +5,7 @@ const regularStockValidation = require('../../validations/regularStock.validatio
 const regularStockController = require('../../controllers/regularStock.controller');
 
 const router = express.Router();
+router.route('/getStockDetailsByDate').get(auth.verifyToken(), regularStockController.getStockDetailsByDate);
 
 router
   .route('/')

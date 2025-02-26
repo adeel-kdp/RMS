@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { RegularStock } = require('../models');
 const ApiError = require('../utils/ApiError');
+const mongoose = require('mongoose');
 
 /**
  * Create a regular stock
@@ -226,6 +227,120 @@ const getTodayRegularStocks = async (shopId) => {
   return result;
 };
 
+
+// const Product = require('../models/product.model');
+
+/**
+ * Get stock details by date range with summed properties for similar products
+ * @param {Object} params - Parameters for filtering
+ * @param {string} params.userId - User ID
+ * @param {string} params.shopId - Shop ID
+ * @param {Date} params.startDate - Start date for filtering
+ * @param {Date} params.endDate - End date for filtering
+ * @returns {Promise<Object>} - Aggregated stock details
+ */
+const getStockDetailsByDate = async (params) => {
+  try {
+    const {startDate, endDate } = params;
+
+
+    // Convert string dates to Date objects if needed
+    // example stateDate = '2021-09-01' endDate = '2021-09-30', formate is 'YYYY-MM-DD'
+    const start = startDate ? new Date(startDate) : new Date().setHours(0, 0, 0, 0); // Default to today date if not provided
+    const end = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : new Date(); // Default to current date if not provided
+    
+    // Find regularStock documents within the date range
+    const stocks = await RegularStock.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: start, $lte: end }
+        }
+      },
+      // Unwind items array to process each item separately
+      { $unwind: '$items' },
+      // Lookup product details
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      // Unwind the productDetails array (should be just one item)
+      { $unwind: '$productDetails' },
+      // Group by productId to sum quantities and other metrics
+      {
+        $group: {
+          _id: '$items.productId',
+          totalQuantity: { $sum: '$items.quantity' },
+          totalWeight: { $sum: '$items.weight' },
+          totalConsumedQuantity: { $sum: '$items.consumedQuantity' },
+          totalHalfPlateConsumed: { $sum: '$items.halfPlateConsumedQuantity' },
+          totalFullPlateConsumed: { $sum: '$items.fullPlateConsumedQuantity' },
+          productDetails: { $first: '$productDetails' },
+          stockEntries: {
+            $push: {
+              stockId: '$_id',
+              quantity: '$items.quantity',
+              weight: '$items.weight',
+              consumedQuantity: '$items.consumedQuantity',
+              halfPlateConsumedQuantity: '$items.halfPlateConsumedQuantity',
+              fullPlateConsumedQuantity: '$items.fullPlateConsumedQuantity',
+              isAvailable: '$items.isAvailable',
+              createdAt: '$createdAt'
+            }
+          }
+        }
+      },
+      // Project to reshape the output
+      {
+        $project: {
+          _id: 0,
+          productId: '$_id',
+          totalQuantity: 1,
+          totalWeight: 1,
+          totalConsumedQuantity: 1,
+          totalHalfPlateConsumed: 1,
+          totalFullPlateConsumed: 1,
+          availableQuantity: { 
+            $subtract: ['$totalQuantity', { $ifNull: ['$totalConsumedQuantity', 0] }] 
+          },
+          productDetails: {
+            _id: '$productDetails._id',
+            name: '$productDetails.name',
+            categoryId: '$productDetails.categoryId',
+            price: '$productDetails.price',
+            unit: '$productDetails.unit',
+            plateType: '$productDetails.plateType',
+            description: '$productDetails.description',
+            images: '$productDetails.images',
+            formula: '$productDetails.formula',
+            mundiRate: '$productDetails.mundiRate',
+            isStockAble: '$productDetails.isStockAble'
+          },
+          stockEntries: 1
+        }
+      },
+      // Sort by product name for easier readability
+      { $sort: { 'productDetails.name': 1 } }
+    ]);
+
+    return {
+      success: true,
+      count: stocks.length,
+      data: stocks
+    };
+  } catch (error) {
+    console.error('Error in getStockDetailsByDate service:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to fetch stock details',
+      error
+    };
+  }
+};
+
 module.exports = {
   createRegularStock,
   queryRegularStocks,
@@ -234,4 +349,5 @@ module.exports = {
   deleteRegularStockById,
   getRegularStocksWithPagination,
   getTodayRegularStocks,
+  getStockDetailsByDate
 };

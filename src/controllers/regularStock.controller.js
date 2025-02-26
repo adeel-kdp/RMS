@@ -61,6 +61,10 @@ const getTodayRegularStocks = catchAsync(async (req, res) => {
   const regularStocks = await regularStockService.getTodayRegularStocks(req.params.shopId);
   res.send(regularStocks);
 });
+const getStockDetailsByDate = catchAsync(async (req, res) => {
+  const regularStocks = await regularStockService.getStockDetailsByDate(req.query);
+  res.send(regularStocks);
+});
 
 
 module.exports = {
@@ -70,5 +74,6 @@ module.exports = {
   updateRegularStock,
   deleteRegularStock,
   getRegularStocksWithPagination,
-  getTodayRegularStocks
+  getTodayRegularStocks,
+  getStockDetailsByDate
 };
