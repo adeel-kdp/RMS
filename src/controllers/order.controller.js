@@ -95,6 +95,11 @@ const orderKpis = catchAsync(async (req, res) => {
   });
 });
 
+const getOrderAnalytics = catchAsync(async (req, res) => {
+  // const { fromDate, toDate } = req.query;
+  const result = await orderService.getOrderAnalytics(req.query);
+  res.send(result);
+});
 
 module.exports = {
   createOrder,
@@ -105,5 +110,6 @@ module.exports = {
   cancelOrderById,
   calculateZeroQuantityItemPrice,
   orderKpis,
-  getOrderByOrderId
+  getOrderByOrderId,
+  getOrderAnalytics
 };
