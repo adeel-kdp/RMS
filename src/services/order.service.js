@@ -518,7 +518,7 @@ const calculateTodayTotalCountOrders = async () => {
 const calculateTotalRevenue = async () => {
   const today = new Date().toISOString().split('T')[0];
   const revenue = await Order.aggregate([
-    { $match: { createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } } },
+    { $match: {paymentStatus: 'paid', createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } } },
     { $group: { _id: null, revenue: { $sum: '$totalAmount' } } },
   ]);
 
