@@ -10,6 +10,7 @@ const Product = require('../models/product.model');
  */
 
 const createOrder = async (userId, orderBody, session) => {
+  let refresh = false;
   const today = new Date().toISOString().split('T')[0];
   const regularStocks = await RegularStock.find({
     userId,
@@ -75,6 +76,7 @@ const createOrder = async (userId, orderBody, session) => {
             orderItem.remainingQuantity -= quantityToConsume;
             isModified = true;
           }
+          if (availableQuantity <= 12) refresh = true;
         } else if (orderItem.length > 0 && stock.isAvailable) {
           // Handle plates
           for (let i = 0; i < orderItem.length; i++) {
@@ -96,7 +98,6 @@ const createOrder = async (userId, orderBody, session) => {
         }
         return stock;
       });
-
       // Only save if modifications were made
       if (isModified) {
         await RegularStock.findOneAndUpdate(
@@ -129,7 +130,8 @@ const createOrder = async (userId, orderBody, session) => {
   // Create the order within the transaction
   const [order] = await Order.create([{ ...orderBody, userId }], { session });
 
-  return order;
+   order.refresh = refresh;
+   return refresh;
 };
 
 /**
