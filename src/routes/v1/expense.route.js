@@ -18,4 +18,5 @@ router
   .delete(auth.verifyToken(), validate(expenseValidation.deleteExpense), expenseController.deleteExpense);
 
 router.get('/analytics', auth.verifyToken(), expenseController.getExpenseAnalytics);
+router.get('/byDate', auth.verifyToken(), expenseController.getExpensesByDate);
 module.exports = router;

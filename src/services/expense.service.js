@@ -115,11 +115,28 @@ const getExpenseAnalytics = async () => {
   };
 };
 
+const getExpensesByDate = async (from, to) => {
+  const filter = {
+    date: {
+      $gte: from,
+      $lte: to,
+    },
+  };
+  const expenses = await Expense.find(filter).sort({ date: -1 });
+  const totalAmount = expenses.reduce((acc, cur) => acc + cur.amount, 0);
+  return {
+    expenses,
+    totalAmount,
+  };
+};
+
+
 module.exports = {
   createExpense,
   queryExpenses,
   getExpenseById,
   updateExpenseById,
   deleteExpenseById,
-  getExpenseAnalytics
+  getExpenseAnalytics,
+  getExpensesByDate,
 };

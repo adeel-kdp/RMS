@@ -43,6 +43,13 @@ const getExpenseAnalytics = catchAsync(async (req, res) => {
   const result = await expenseService.getExpenseAnalytics();
   res.send(result);
 });
+
+const getExpensesByDate = catchAsync(async (req, res) => {
+  const { from, to } = req.query;
+  const result = await expenseService.getExpensesByDate(from, to);
+  res.send(result);
+});
+
 module.exports = {
   createExpense,
   getExpensesWithPagination,
@@ -50,4 +57,5 @@ module.exports = {
   updateExpense,
   deleteExpense,
   getExpenseAnalytics,
+  getExpensesByDate,
 };
