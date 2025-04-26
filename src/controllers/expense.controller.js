@@ -45,8 +45,8 @@ const getExpenseAnalytics = catchAsync(async (req, res) => {
 });
 
 const getExpensesByDate = catchAsync(async (req, res) => {
-  const { from, to } = req.query;
-  const result = await expenseService.getExpensesByDate(from, to);
+  const { startDate, endDate } = req.query;
+  const result = await expenseService.getExpensesByDate(startDate, endDate);
   res.send(result);
 });
 
