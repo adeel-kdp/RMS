@@ -6,6 +6,11 @@ const expenseController = require('../../controllers/expense.controller');
 
 const router = express.Router();
 
+// Define specific routes first
+router.get('/analytics', auth.verifyToken(), expenseController.getExpenseAnalytics);
+router.get('/byDate', auth.verifyToken(), expenseController.getExpensesByDate);
+
+// Define general routes after specific ones
 router
   .route('/')
   .post(auth.verifyToken(), validate(expenseValidation.createExpense), expenseController.createExpense)
@@ -17,6 +22,4 @@ router
   .put(auth.verifyToken(), validate(expenseValidation.updateExpense), expenseController.updateExpense)
   .delete(auth.verifyToken(), validate(expenseValidation.deleteExpense), expenseController.deleteExpense);
 
-router.get('/analytics', auth.verifyToken(), expenseController.getExpenseAnalytics);
-router.get('/byDate', auth.verifyToken(), expenseController.getExpensesByDate);
 module.exports = router;

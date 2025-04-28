@@ -115,14 +115,17 @@ const getExpenseAnalytics = async () => {
   };
 };
 
-const getExpensesByDate = async (from, to) => {
+const getExpensesByDate = async (startDate, endDate) => {
+  const start = startDate ? new Date(startDate) : new Date().setHours(0, 0, 0, 0); // Default to today date if not provided
+  const end = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : new Date(); // Default to current date if not provided
+  
   const filter = {
     date: {
-      $gte: from,
-      $lte: to,
+      $gte: start,
+      $lte: end,
     },
   };
-  const expenses = await Expense.find(filter).sort({ date: -1 });
+  const expenses = await Expense.find(filter).lean();
   const totalAmount = expenses.reduce((acc, cur) => acc + cur.amount, 0);
   return {
     expenses,
