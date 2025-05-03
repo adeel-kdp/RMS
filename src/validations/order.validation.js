@@ -30,6 +30,7 @@ const createOrder = {
     ).required(),
     shippingAddress: Joi.string(),
     shopId: Joi.string().custom(objectId).required(),
+    orderDate: Joi.string().allow('', null).optional(),
   }),
 };
 

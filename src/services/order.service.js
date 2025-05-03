@@ -11,7 +11,8 @@ const Product = require('../models/product.model');
 
 const createOrder = async (userId, orderBody, session) => {
   let refresh = false;
-  const today = new Date().toISOString().split('T')[0];
+  const orderDate = orderBody.orderDate ? new Date(orderBody.orderDate) : new Date();
+  const today = orderDate.toISOString().split('T')[0];
   const regularStocks = await RegularStock.find({
     userId,
     shopId: orderBody.shopId,
@@ -128,7 +129,12 @@ const createOrder = async (userId, orderBody, session) => {
   }
 
   // Create the order within the transaction
-  const [order] = await Order.create([{ ...orderBody, userId }], { session });
+  const orderBodyWithDate = orderBody.orderDate
+    ? { ...orderBody, createdAt: new Date(orderBody.orderDate), updatedAt: new Date(orderBody.orderDate) }
+    : orderBody;
+
+  delete orderBodyWithDate.orderDate
+  const [order] = await Order.create([{ ...orderBodyWithDate, userId }], { session });
 
    order.refresh = refresh;
    return refresh;
