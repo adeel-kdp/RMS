@@ -13,7 +13,7 @@ const { tokenTypes } = require('../config/tokens');
  */
 const loginUserWithEmailAndPassword = async (email, password, role) => {
   const user = await userService.getUserByEmail(email);
-  if (!user || !user.isEmailVerified || user.role !== role) {
+  if (!user || !user.isEmailVerified ) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please verify your email first or you are not authorized for this role');
   }
   if (!(await user.isPasswordMatch(password))) {
