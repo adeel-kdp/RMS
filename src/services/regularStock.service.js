@@ -170,12 +170,10 @@ const deleteRegularStockById = async (id) => {
 
 const getTodayRegularStocks = async (shopId) => {
   const today = new Date().toISOString().split('T')[0];
-  console.log(
-    `createdAt: { $gte: ${new Date(today).setHours(0, 0, 0, 0)}, $lt: ${new Date(today).setHours(23, 59, 59, 999)} }`
-  );
   const regularStocks = await RegularStock.find({
     // shopId,
     createdAt: { $gte: new Date().setHours(0, 0, 0, 0), $lt: new Date().setHours(23, 59, 59, 999) },
+
   })
     .populate({
       path: 'items.productId',
@@ -203,11 +201,15 @@ const getTodayRegularStocks = async (shopId) => {
             result[product.productId._id] = product;
             result[product.productId._id].count = 0;
           } else {
-            result[product.productId._id] = { ...result[product.productId._id], ...product };
+            result[product.productId._id].halfPlateConsumedQuantity += product.halfPlateConsumedQuantity;
+            result[product.productId._id].fullPlateConsumedQuantity += product.fullPlateConsumedQuantity;
           }
         } else if (!result[product.productId._id]) {
           result[product.productId._id] = product;
           result[product.productId._id].count = 0;
+        }else {
+          result[product.productId._id].halfPlateConsumedQuantity += product.halfPlateConsumedQuantity;
+          result[product.productId._id].fullPlateConsumedQuantity += product.fullPlateConsumedQuantity;
         }
         result[product.productId._id].count += 1;
       }
