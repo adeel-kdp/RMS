@@ -135,7 +135,8 @@ const createOrder = async (userId, orderBody, session) => {
 
   delete orderBodyWithDate.orderDate
   const [order] = await Order.create([{ ...orderBodyWithDate, userId }], { session });
-
+  console.log("orderBodyWithDate", orderBodyWithDate)
+  console.log("order", order)
    order.refresh = refresh;
    return refresh;
 };
