@@ -13,7 +13,7 @@ const createOrder = async (userId, orderBody, session) => {
   let refresh = false;
   const orderDate = orderBody.orderDate ? new Date(orderBody.orderDate) : new Date();
   const today = orderDate.toISOString().split('T')[0];
-  const regularStocks = await RegularStock.find({
+  const regularStocksData = await RegularStock.find({
     userId,
     shopId: orderBody.shopId,
     createdAt: {
@@ -22,10 +22,10 @@ const createOrder = async (userId, orderBody, session) => {
     },
   }).sort({ createdAt: 1 });
 
-  if (!regularStocks.length) {
+  if (!regularStocksData.length) {
     throw new Error('No Stocks Found For Today');
   }
-
+  const regularStocks = regularStocksData.map(stock => stock.toObject());
   // Create a map of items with deep clone to avoid reference issues
   const items = orderBody.items.reduce((acc, item) => {
     const key = item?.parentProduct || item.productId;
@@ -57,58 +57,116 @@ const createOrder = async (userId, orderBody, session) => {
     }
     return acc;
   }, {});
+  console.log('items ====>>>', items);
 
   // Process regular stocks
-  await Promise.all(
-    regularStocks.map(async (regularStock) => {
-      let isModified = false;
-      const updatedItems = regularStock.items.map((stock) => {
-        const orderItem = items[stock.productId];
-        if (!orderItem) return stock;
+  // await Promise.all(
+  //   regularStocks.map(async (regularStock) => {
+  //     let isModified = false;
+  //     const updatedItems = regularStock.items.map((stock) => {
+  //       const orderItem = items[stock.productId];
+  //       if (!orderItem) return stock;
 
-        const stockCopy = { ...stock };
-        if (orderItem?.remainingQuantity > 0 && !orderItem?.parentProduct) {
-          // Handle regular products
-          const availableQuantity = stock.quantity - (stock.consumedQuantity || 0);
-          const quantityToConsume = Math.min(orderItem.remainingQuantity, availableQuantity);
+  //       const stockCopy = { ...stock };
+  //       if (orderItem?.remainingQuantity > 0 && !orderItem?.parentProduct) {
+  //         // Handle regular products
+  //         const availableQuantity = stock.quantity - (stock.consumedQuantity || 0);
+  //         const quantityToConsume = Math.min(orderItem.remainingQuantity, availableQuantity);
 
-          if (quantityToConsume > 0) {
-            stock.consumedQuantity = (stock.consumedQuantity || 0) + quantityToConsume;
-            orderItem.remainingQuantity -= quantityToConsume;
+  //         if (quantityToConsume > 0) {
+  //           stock.consumedQuantity = (stock.consumedQuantity || 0) + quantityToConsume;
+  //           orderItem.remainingQuantity -= quantityToConsume;
+  //           isModified = true;
+  //         }
+  //         if (availableQuantity <= 12) refresh = true;
+  //       } else if (orderItem.length > 0 && stock.isAvailable) {
+  //         // Handle plates
+  //         for (let i = 0; i < orderItem.length; i++) {
+  //           const element = orderItem[i];
+
+  //           if (element?.parentProduct && element?.remainingQuantity > 0) {
+  //             console.log('element', element);
+
+  //             // Handle products with parent products (plates)
+  //             if (element.plateType === 'full') {
+  //               stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + element.remainingQuantity;
+  //             } else if (element.plateType === 'half') {
+  //               stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + element.remainingQuantity;
+  //             }
+  //             orderItem[i].remainingQuantity = 0;
+  //             isModified = true;
+  //           }
+  //         }
+  //       }
+  //       return stock;
+  //     });
+  //     // Only save if modifications were made
+  //     if (isModified) {
+  //       await RegularStock.findOneAndUpdate(
+  //         { _id: regularStock._id },
+  //         { $set: { items: updatedItems } },
+  //         { new: true, session }
+  //       );
+  //     }
+  //   })
+  // );
+
+  for (let i = 0; i < regularStocks.length; i++) {
+    const regularStock = regularStocks[i];
+
+    let isModified = false;
+
+    const updatedItems = [];
+    // regularStock.items.map((stock) =>
+    for (let j = 0; j < regularStock.items.length; j++) {
+      const stock = regularStock.items[j];
+      const orderItem = items[stock.productId];
+      if (!orderItem) {
+        updatedItems.push(stock);
+        continue;
+      }
+
+      if (orderItem?.remainingQuantity > 0 && !orderItem?.parentProduct) {
+        // Handle regular products
+        const availableQuantity = stock.quantity - (stock.consumedQuantity || 0);
+        const quantityToConsume = Math.min(orderItem.remainingQuantity, availableQuantity);
+
+        if (quantityToConsume > 0) {
+          stock.consumedQuantity = (stock.consumedQuantity || 0) + quantityToConsume;
+          orderItem.remainingQuantity -= quantityToConsume;
+          isModified = true;
+        }
+        if (availableQuantity <= 12) refresh = true;
+      } else if (orderItem.length > 0 && stock.isAvailable) {
+        // Handle plates
+        for (let i = 0; i < orderItem.length; i++) {
+          const element = orderItem[i];
+
+          if (element?.parentProduct && element?.remainingQuantity > 0) {
+            // Handle products with parent products (plates)
+            if (element.plateType === 'full') {
+              stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + element.remainingQuantity;
+            } else if (element.plateType === 'half') {
+              stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + element.remainingQuantity;
+            }
+            orderItem[i].remainingQuantity = 0;
             isModified = true;
           }
-          if (availableQuantity <= 12) refresh = true;
-        } else if (orderItem.length > 0 && stock.isAvailable) {
-          // Handle plates
-          for (let i = 0; i < orderItem.length; i++) {
-            const element = orderItem[i];
-
-            if (element?.parentProduct && element?.remainingQuantity > 0) {
-              console.log('element', element);
-
-              // Handle products with parent products (plates)
-              if (element.plateType === 'full') {
-                stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + element.remainingQuantity;
-              } else if (element.plateType === 'half') {
-                stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + element.remainingQuantity;
-              }
-              orderItem[i].remainingQuantity = 0;
-              isModified = true;
-            }
-          }
         }
-        return stock;
-      });
-      // Only save if modifications were made
-      if (isModified) {
-        await RegularStock.findOneAndUpdate(
-          { _id: regularStock._id },
-          { $set: { items: updatedItems } },
-          { new: true, session }
-        );
       }
-    })
-  );
+      updatedItems.push(stock);
+    }
+    // Only save if modifications were made
+    console.log('updatedItems', updatedItems);
+    
+    if (isModified) {
+      await RegularStock.findOneAndUpdate(
+        { _id: regularStock._id },
+        { $set: { items: updatedItems } },
+        { new: true, session }
+      );
+    }
+  }
 
   // Handle stockable products
   await Promise.all(
@@ -133,12 +191,12 @@ const createOrder = async (userId, orderBody, session) => {
     ? { ...orderBody, createdAt: new Date(orderBody.orderDate), updatedAt: new Date(orderBody.orderDate) }
     : orderBody;
 
-  delete orderBodyWithDate.orderDate
+  delete orderBodyWithDate.orderDate;
   const [order] = await Order.create([{ ...orderBodyWithDate, userId }], { session });
-  console.log("orderBodyWithDate", orderBodyWithDate)
-  console.log("order", order)
-   order.refresh = refresh;
-   return refresh;
+  console.log('orderBodyWithDate', orderBodyWithDate);
+  console.log('order', order);
+  order.refresh = refresh;
+  return refresh;
 };
 
 /**
@@ -224,7 +282,7 @@ const getOrderByOrderId = async (id) => {
 const updateOrderById = async (userId, orderId, updateBody, session) => {
   // First get the existing order - INCLUDE SESSION IN QUERY
   const existingOrder = await getOrderById(orderId);
-  
+
   if (!existingOrder) {
     throw new Error('Order not found');
   }
@@ -240,7 +298,7 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
     for (let i = 0; i < existingOrder.items.length; i++) {
       const item = existingOrder.items[i];
       if (item?.productId?.dealProducts?.length) {
-        const a = updateBody.items.findIndex((updateItem) =>  updateItem.name == item.name);
+        const a = updateBody.items.findIndex((updateItem) => updateItem.name == item.name);
         if (a !== -1) {
           updateBody.items[a].dealProducts = item.productId.dealProducts;
         }
@@ -319,7 +377,12 @@ const updateOrderById = async (userId, orderId, updateBody, session) => {
             for (let i = 0; i < orderItem.length; i++) {
               const element = orderItem[i];
               if (element?.parentProduct && element?.remainingQuantity > 0) {
-                if (element.name.includes("Full") || element.name.includes("full") || element.name.includes("Double") || element.name.includes("double")) {
+                if (
+                  element.name.includes('Full') ||
+                  element.name.includes('full') ||
+                  element.name.includes('Double') ||
+                  element.name.includes('double')
+                ) {
                   stock.fullPlateConsumedQuantity = (stock.fullPlateConsumedQuantity || 0) + element.remainingQuantity;
                 } else {
                   stock.halfPlateConsumedQuantity = (stock.halfPlateConsumedQuantity || 0) + element.remainingQuantity;
@@ -464,7 +527,13 @@ const revertStockChanges = async (order, session) => {
           }
         } else if (Array.isArray(orderItem)) {
           orderItem.forEach((plate) => {
-            if ((plate.name.includes("Full") || plate.name.includes("full") || plate.name.includes("Double") || plate.name.includes("double")) && stock.fullPlateConsumedQuantity) {
+            if (
+              (plate.name.includes('Full') ||
+                plate.name.includes('full') ||
+                plate.name.includes('Double') ||
+                plate.name.includes('double')) &&
+              stock.fullPlateConsumedQuantity
+            ) {
               stock.fullPlateConsumedQuantity = Math.max(0, stock.fullPlateConsumedQuantity - plate.quantity);
               isModified = true;
             } else if (stock.halfPlateConsumedQuantity) {
@@ -527,7 +596,7 @@ const calculateTodayTotalCountOrders = async () => {
 const calculateTotalRevenue = async () => {
   const today = new Date().toISOString().split('T')[0];
   const revenue = await Order.aggregate([
-    { $match: {paymentStatus: 'paid', createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } } },
+    { $match: { paymentStatus: 'paid', createdAt: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59.999Z') } } },
     { $group: { _id: null, revenue: { $sum: '$totalAmount' } } },
   ]);
 
@@ -535,7 +604,6 @@ const calculateTotalRevenue = async () => {
   console.log(`Total revenue for today: ${totalRevenue}`);
   return totalRevenue;
 };
-
 
 /**
  * Get order analytics including product quantities sold between dates
@@ -548,92 +616,95 @@ const calculateTotalRevenue = async () => {
 const getOrderAnalytics = async (params) => {
   try {
     // Validate and process date inputs
-    const {startDate, endDate } = params;
+    const { startDate, endDate } = params;
 
     const start = startDate ? new Date(startDate) : new Date().setHours(0, 0, 0, 0); // Default to today date if not provided
     const end = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : new Date(); // Default to current date if not provided
-    
+
     // Base match condition
     const matchCondition = {
       createdAt: { $gte: start, $lte: end },
-      paymentStatus: 'paid' // Only include paid orders
+      paymentStatus: 'paid', // Only include paid orders
     };
-    
+
     // // Add shopId to match condition if provided
     // if (options.shopId) {
     //   matchCondition.shopId = mongoose.Types.ObjectId.isValid(options.shopId)
     //     ? new mongoose.Types.ObjectId(options.shopId)
     //     : options.shopId;
     // }
-    
+
     // Get total orders and revenue
     const orderSummary = await Order.aggregate([
       { $match: matchCondition },
-      { 
-        $group: { 
-          _id: null, 
+      {
+        $group: {
+          _id: null,
           totalOrders: { $sum: 1 },
           totalRevenue: { $sum: '$totalAmount' },
           avgOrderValue: { $avg: '$totalAmount' },
-          customerTypes: { $addToSet: '$customerType' }
-        } 
-      }
+          customerTypes: { $addToSet: '$customerType' },
+        },
+      },
     ]);
-    
+
     // // Get order counts by customer type
     // const ordersByCustomerType = await Order.aggregate([
     //   { $match: matchCondition },
-    //   { 
-    //     $group: { 
-    //       _id: '$customerType', 
+    //   {
+    //     $group: {
+    //       _id: '$customerType',
     //       count: { $sum: 1 },
     //       revenue: { $sum: '$totalAmount' }
-    //     } 
+    //     }
     //   },
     //   { $sort: { count: -1 } }
     // ]);
-    
+
     // Get product sales data - quantities and revenue
     const productSales = await Order.aggregate([
       { $match: matchCondition },
       { $unwind: '$items' }, // Unwind items array
-      { 
-        $group: { 
+      {
+        $group: {
           _id: '$items.name', // Group by product name only
           totalQuantity: { $sum: '$items.quantity' }, // Sum of quantity sold
           // totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }, // Total revenue
-          totalRevenue: { 
-            $sum: { 
-              $cond: { if: { $gt: ['$items.quantity', 0] }, then: { $multiply: ['$items.price', '$items.quantity'] }, else: '$items.price' }
-            } 
+          totalRevenue: {
+            $sum: {
+              $cond: {
+                if: { $gt: ['$items.quantity', 0] },
+                then: { $multiply: ['$items.price', '$items.quantity'] },
+                else: '$items.price',
+              },
+            },
           },
           orderCount: { $sum: 1 }, // Number of orders
-          prices: { $push: '$items.price' } // Collect all prices
-        } 
+          prices: { $push: '$items.price' }, // Collect all prices
+        },
       },
-      { 
+      {
         $addFields: {
-          price: { $arrayElemAt: ['$prices', 0] } // Pick the first price from the list (adjust if needed)
-        }
+          price: { $arrayElemAt: ['$prices', 0] }, // Pick the first price from the list (adjust if needed)
+        },
       },
-      { 
+      {
         $project: {
           _id: 0,
           name: '$_id', // Extract name
           price: 1, // Show selected price
           totalQuantity: 1,
           totalRevenue: 1,
-          orderCount: 1
-        } 
+          orderCount: 1,
+        },
       },
-      { $sort: { totalQuantity: -1 } } // Sort by total quantity sold in descending order
+      { $sort: { totalQuantity: -1 } }, // Sort by total quantity sold in descending order
     ]);
-    
-   
+
     return {
       period: {
         from: start,
-        to: end
+        to: end,
       },
       summary: {
         totalOrders: orderSummary[0]?.totalOrders || 0,
@@ -649,7 +720,6 @@ const getOrderAnalytics = async (params) => {
   }
 };
 
-
 module.exports = {
   createOrder,
   queryOrders,
@@ -660,5 +730,5 @@ module.exports = {
   calculateTodayTotalCountOrders,
   calculateTotalRevenue,
   getOrderByOrderId,
-  getOrderAnalytics
+  getOrderAnalytics,
 };
