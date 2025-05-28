@@ -14,7 +14,7 @@ const createOrder = async (userId, orderBody, session) => {
   const orderDate = orderBody.orderDate ? new Date(orderBody.orderDate) : new Date();
   const today = orderDate.toISOString().split('T')[0];
   const regularStocksData = await RegularStock.find({
-    userId,
+    // userId,
     shopId: orderBody.shopId,
     createdAt: {
       $gte: new Date(today).setHours(0, 0, 0, 0),
